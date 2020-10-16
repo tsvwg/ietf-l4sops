@@ -87,9 +87,7 @@ please see http://xml.resource.org/authoring/README.html. -->
         keywords will be used for the search engine. -->
 
         <abstract>
-         <t>This is an early, work-in-progress draft - a start at getting some of the ideas from the mailing list and email exchanges on paper.</t>
-
-         <t> This draft is intended to provide guidance to operators of end-systems, operators of networks, and researchers in order to ensure reasonable fairness between L4S and Classic flows sharing a single-queue RFC3168 bottleneck link.  This draft identifies opportunites to prevent and/or detect and resolve fairness problems in such networks.  </t>
+         <t>This draft is intended to provide guidance to operators of end-systems, operators of networks, and researchers in order to ensure successful deployment of L4S in the Internet. It includes mechanisms that are intended to promote reasonable fairness between L4S and Classic flows sharing a single-queue RFC3168 bottleneck link.  This draft identifies opportunites to prevent and/or detect and resolve fairness problems in such networks.  </t>
        </abstract>
      </front>
 
@@ -100,19 +98,21 @@ please see http://xml.resource.org/authoring/README.html. -->
         <t>In the majority of network paths, including paths where the bottleneck link utilizes packet drops (either due to buffer overrun or active queue management) in response to congestion, as well as paths that implement a 'flow-queuing' scheduler such as fq_codel or Cobalt, and those that implement dual-Q-coupled AQM, L4S traffic coexists well with classic congestion controlled traffic.</t>
         <t>On network paths where the bottleneck link implements a shared-queue (FIFO) with an Active Queue Management algorithm that provides Explicit Congestion Notification signaling according to RFC3168, it has been demonstrated that when a set of long-running flows comprising both "Classic" congestion controlled flows and L4S-compliant congestion controlled flows compete for bandwidth, the classic congestion controlled flows may achieve lower throughput when compared to the L4S congestion controlled flows.  This 'unfairness' between the two classes appears to be more pronounced on longer RTT paths (e.g. 50ms and above) and/or at higher link rates (e.g. 50 Mbps and above).</t>
         <t>The root cause of this unfairness is that RFC3168 does not differentiate between packets marked ECT0 (used by classic senders) and those marked ECT1 (used by L4S senders), and provides an identical congestion signal (CE marks) to both classes, whereas the two classes respond differently to that congestion signal.  The classic senders expect that CE marks are sent very rarely (e.g. approximately 1 CE mark every 200 round trips on a 50 Mbps x 50ms path) while the L4S senders expect very frequent CE marking (e.g. approximately 2 CE marks per round trip). The result is that the classic senders respond to the CE marks provided by the bottleneck by yielding capacity to the L4S flows. While this has not been demonstrated to cause starvation of the classic flows, the resulting rate imbalance can be a cause of concern.</t>
+
+        <t>Comments received: birthday paradox (and tunneled traffic mix) with fq_codel, root cause is L4S redefinition of CE and new congestion response, unfairness *can* be demonstrated in contrived situations</t>  
       </section>
 
       <section title="Per-Flow Fairness">
         <t>There are a number of factors that influence the relative rates achieved by a set of congestion controlled flows sharing a queue in a bottleneck link. </t>
         <t>TODO: discuss startup &amp; convergence times, short flows, RTT-unfairness, differences in deployed CC algorithms, etc. </t>
         <t>TODO: also mention that flow sharding is commonplace, so per-flow fairness does not imply per-application fairness</t>
+        <t>Comments received: per-end-host fairness or per-customer fairness may be more important than per-flow fairness</t>
       </section>
 
       <section title="Operator of an L4S host">
 
         <t>Support for L4S involves both endpoints: ECT1 marking &amp; L4S-compatible congestion control on the sender, and ECN feedback on the receiver. Between these two entities, it is incumbent upon the sender to evaluate the potential for unfairness and make decisions whether or not to use L4S congestion control. The receiver is not expected to perform any testing or monitoring for unfairness, and is also not expected to invoke any active response in the case that unfairness occurs.</t> 
 
-        
         <t>TODO: now we're going to talk about two sender types....</t>
 
         <t>TODO: also need to discuss how/when to re-enable L4S if it becomes disabled</t>
@@ -120,13 +120,15 @@ please see http://xml.resource.org/authoring/README.html. -->
         <section title="CDN Servers">
           <t>Some hosts (such as CDN leaf nodes and servers internal to an ISP) are deployed in environments in which they serve content to a constrained set of networks or clients. The operator of such hosts may be able to determine whether there is the possibility of RFC3168 FIFO bottlenecks being present, and utilize this information to make decisions on selectively deploying L4S.</t>  
 
+          <t>TODO: more description of the possibility of end-systems (e.g. customer networks) having RFC3168 FIFOs. For example, if an ISP is known to have implemented RFC3168 FIFO bottlenecks, a server deployed to serve that network may decide not to attempt L4S until those bottlenecks are remedied. Alternatively, if a residential ISP is known to have not implemented RFC3168 FIFO bottlenecks, then (compared to the general case) the presence of RFC3168 CE marking could be considered even more likely to be fq_codel (or CAKE) as opposed to a single queue bottleneck (since RFC3168 FIFOs are largely limited to enterprise and core network switches).  If such an ISP is also known to have implemented L4S compliant bottlenecks, then perhaps this network is a high priority on which to begin experimenting with L4S deployment (as opposed to an ISP that is known to have not yet implemented L4S compliant bottlenecks).  There is no guarantee that a customer of that ISP isn’t running a RFC3168 FIFO bottleneck, but nonetheless having knowledge about the characteristics of the known bottlenecks in a network is information that can be utilized in the decision making.</t>  
+
           <t><list style="symbols">
           <t>Prior to deploying L4S on servers:
           <list style="symbols">
             <t>Consult with network operators on presence of RFC3168 FIFO bottlenecks</t>
             <t>Perform downstream tests per access network
             <list style="symbols">
-              <t>Tests (TBD) to detect absence of RFC 3168</t>
+              <t>Tests (TBD) to detect absence of RFC 3168 (TODO: need more discussion about test methodologies and their implications (complexity, accuracy, etc.)).</t>
               <t>Enable AccECN feedback, but enable/disable L4S per access network</t>
             </list></t>
           </list></t>

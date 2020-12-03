@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!-- This template is for creating an Internet Draft using xml2rfc,
+which is available here: http://xml.resource.org. -->
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+<!-- One method to get references from the online citation libraries.
+    There has to be one entity for each item to be referenced. 
+    An alternate method (rfc include) is described in the references. -->
+
+    <!ENTITY RFC2119 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml">    
+    <!ENTITY RFC8174 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8174.xml">
+    <!ENTITY RFC8290 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8290.xml">
+    <!ENTITY RFC3168 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.3168.xml">
+    ]>
+    <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+    <!-- used by XSLT processors -->
+<!-- For a complete list and description of processing instructions (PIs), 
+please see http://xml.resource.org/authoring/README.html. -->
+<!-- Below are generally applicable Processing Instructions (PIs) that most I-Ds might want to use.
+(Here they are set differently than their defaults in xml2rfc v1.32) -->
+<?rfc strict="yes" ?>
+<!-- give errors regarding ID-nits and DTD validation -->
+<!-- control the table of contents (ToC) -->
+<?rfc toc="yes"?>
+<!-- generate a ToC -->
+<?rfc tocdepth="4"?>
+<!-- the number of levels of subsections in ToC. default: 3 -->
+<!-- control references -->
+<?rfc symrefs="yes"?>
+<!-- use symbolic references tags, i.e, [RFC2119] instead of [1] -->
+<?rfc sortrefs="yes" ?>
+<!-- sort the reference entries alphabetically -->
+<!-- control vertical white space 
+(using these PIs as follows is recommended by the RFC Editor) -->
+<?rfc compact="yes" ?>
+<!-- do not start each main section on a new page -->
+<?rfc subcompact="no" ?>
+<!-- keep one blank line between list items -->
+<!-- end of list of popular I-D processing instructions -->
+<rfc category="info" docName="draft-white-tsvwg-l4sops-01" ipr="trust200902">
+ <!-- category values: std, bcp, info, exp, and historic
+    ipr values: trust200902, noModificationTrust200902, noDerivativesTrust200902,
+       or pre5378Trust200902
+    you can add the attributes updates="NNNN" and obsoletes="NNNN" 
+    they will automatically be output with "(if approved)" -->
+
+    <!-- ***** FRONT MATTER ***** -->
+
+    <front>
+   <!-- The abbreviated title is used in the page header - it is only necessary if the 
+   full title is longer than 39 characters -->
+
+   <title abbrev="L4S Operational Guidance">Operational Guidance for Deployment of L4S in the Internet</title>
+
+   <!-- add 'role="editor"' below for the editors if appropriate -->
+
+   <!-- Another author who claims to be an editor -->
+
+   <author fullname="Greg White" initials="G." surname="White" role="editor">
+     <organization>CableLabs</organization>
+     <address>
+       <email>g.white@cablelabs.com</email>
+     </address>
+   </author>
+
+
+
+   <date year="2020" />
+
+   <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
+        in the current day for you. If only the current year is specified, xml2rfc will fill 
+	 in the current day and month for you. If the year is not the current one, it is 
+	 necessary to specify at least a month (xml2rfc assumes day="1" if not specified for the 
+	 purpose of calculating the expiry date).  With drafts it is normally sufficient to 
+	 specify just the year. -->
+
+  <!-- Meta-data Declarations -->
+
+  <area>Transport</area>
+
+  <workgroup>Transport Area Working Group</workgroup>
+
+
+  <keyword></keyword>
+
+   <!-- Keywords will be incorporated into HTML output
+        files in a meta tag but they have no effect on text or nroff
+        output. If you submit your draft to the RFC Editor, the
+        keywords will be used for the search engine. -->
+
+        <abstract>
+         <t>This draft is intended to provide guidance to operators of end-systems, operators of networks, and researchers in order to ensure successful deployment of L4S in the Internet. It includes mechanisms that are intended to promote reasonable fairness between L4S and Classic flows sharing a single-queue <xref target="RFC3168"/> bottleneck link.  This draft identifies opportunites to prevent and/or detect and resolve fairness problems in such networks.  </t>
+       </abstract>
+     </front>
+
+     <middle>
+
+
+      <section title="Introduction">
+        <t>In the majority of network paths, including paths where the bottleneck link utilizes packet drops (either due to buffer overrun or active queue management) in response to congestion, as well as paths that implement a 'flow-queuing' scheduler such as <xref target="RFC8290">fq_codel</xref> or CAKE, and those that implement dual-Q-coupled AQM, L4S traffic generally coexists well with classic congestion controlled traffic.</t>
+
+        <t>On network paths where the bottleneck link instead implements a shared-queue (FIFO) with an Active Queue Management algorithm that provides Explicit Congestion Notification signaling according to <xref target="RFC3168"/>, it has been demonstrated that when a set of long-running flows comprising both "Classic" congestion controlled flows and L4S-compliant congestion controlled flows compete for bandwidth, the classic congestion controlled flows may achieve lower throughput when compared to the L4S congestion controlled flows.  This 'unfairness' between the two classes appears to be more pronounced on longer RTT paths (e.g. 50ms and above) and/or at higher link rates (e.g. 50 Mbps and above).</t>
+        
+        <t>The root cause of this unfairness is that <xref target="RFC3168"/> does not differentiate between packets marked ECT0 (used by classic senders) and those marked ECT1 (used by L4S senders), and provides an identical congestion signal (CE marks) to both classes, while the L4S architecture redefines the CE mark and congestion response in the case of ECT1 marked packets. The result is that the two classes respond differently to the CE congestion signal. The classic senders expect that CE marks are sent very rarely (e.g. approximately 1 CE mark every 200 round trips on a 50 Mbps x 50ms path) while the L4S senders expect very frequent CE marking (e.g. approximately 2 CE marks per round trip). The result is that the classic senders respond to the CE marks provided by the bottleneck by yielding capacity to the L4S flows. While this has not been demonstrated to cause starvation of the classic flows, the resulting rate imbalance can be demonstrated, and could be a cause of concern.</t>
+      </section>
+
+      <section title="Per-Flow Fairness">
+        <t>There are a number of factors that influence the relative rates achieved by a set of congestion controlled flows sharing a queue in a bottleneck link. </t>
+        <t>TODO: discuss startup &amp; convergence times, short flows, RTT-unfairness, differences in deployed CC algorithms, etc. </t>
+        <t>TODO: also mention that flow sharding is commonplace, so per-flow fairness does not imply per-application fairness</t>
+        <t>Comments received: per-end-host fairness or per-customer fairness may be more important than per-flow fairness</t>
+      </section>
+
+      <section title="Operator of an L4S host">
+
+        <t>Support for L4S involves both endpoints: ECT1 marking &amp; L4S-compatible congestion control on the sender, and ECN feedback on the receiver. Between these two entities, it is incumbent upon the sender to evaluate the potential for unfairness and make decisions whether or not to use L4S congestion control. The receiver is not expected to perform any testing or monitoring for unfairness, and is also not expected to invoke any active response in the case that unfairness occurs.</t> 
+
+        <t>The responsibilities of and actions taken by a sender may strongly depend on the environment in which it is deployed.  This section discusses two scenarios: a constrained environment and an unconstrained environment.</t>
+
+        <t>TODO: also need to discuss how/when to re-enable L4S if it becomes disabled</t>
+
+        <section title="CDN Servers">
+          <t>Some hosts (such as CDN leaf nodes and servers internal to an ISP) are deployed in environments in which they serve content to a constrained set of networks or clients. The operator of such hosts may be able to determine whether there is the possibility of <xref target="RFC3168"/> FIFO bottlenecks being present, and utilize this information to make decisions on selectively deploying L4S.  Furthermore, such an operator may be able to determine the likelihood of an L4S bottleneck being present, and use this information as well.</t>  
+          
+          <t>For example, if a particular network is known to have deployed <xref target="RFC3168"/> FIFO bottlenecks, deployment of L4S should be delayed until those bottlenecks can be upgraded to mitigate any potential issues as discussed in the next section.</t>
+          
+          <t>If a particular network offers connectivity to other networks (e.g. in the case of an ISP offering service to their customer's networks), the lack of RFC3168 FIFO bottleneck deployment in the ISP network can't be taken as evidence that RFC3168 FIFO bottlenecks don't exist end-to-end (because one may have been deployed by the end-user network). In these cases, deployment of L4S will need to take appropriate steps to detect the presence of such bottlenecks. At present, it is believed that the vast majority of RFC3168 bottlenecks in end-user networks are implementations that utilize fq_codel or Cake, where the unfairness problem does not exist. While this doesn't completely eliminate the possibility that a <xref target="RFC3168"/> FIFO bottleneck could exist, it nonetheless provides useful information that can be utilized in the decision making around the potential risk for any unfairness to be experienced by end users.</t>
+
+          <t><list style="symbols">
+          <t>Prior to deploying L4S on servers:
+          <list style="symbols">
+            <t>Consult with network operators on presence of <xref target="RFC3168"/> FIFO bottlenecks</t>
+            <t>Consult with network operators on presence of L4S bottlenecks</t>
+            <t>Perform downstream tests per access network
+            <list style="symbols">
+              <t>Tests (TBD) to detect absence of RFC 3168 (TODO: need more discussion about test methodologies and their implications (complexity, accuracy, etc.)).</t>
+              <t>Enable AccECN feedback for TCP, but enable/disable L4S per access network</t>
+            </list></t>
+          </list></t>
+          <t>In-band <xref target="RFC3168"/> detection and monitoring: (cite: Fallback Tech Report)
+          <list style="symbols">
+              <t>Real-time response (fallback)</t>
+              <t>Non-real-time response (disable for future connections)</t>
+          </list></t>
+        </list></t>
+        </section>
+
+
+        <section title="Other hosts">
+          <t>Hosts that are deployed in locations that serve a wide variety of networks face a more difficult prospect in terms of identifying the presence of RFC3168 FIFO bottlenecks.  Nonetheless, steps can be taken to minimize the risk of unfairness.</t>
+
+          <t>Methods that can be deployed include:</t>
+          <t><list style="symbols">
+          <t>In-band <xref target="RFC3168"/> detection (and possibly fallback)</t>
+          <t>Per-dst path test: <list style="symbols">
+            <t>For a connection capable of L4S feedback</t>
+            <t>If CE feedback, perform active test (TBD) for <xref target="RFC3168"/> presence</t>
+            </list></t>
+          </list></t>
+
+          <t>Since existing studies have hinted that RFC3168 FIFO bottlenecks are rare, detections using these techniques may also prove to be rare. Therefore, it may be possible for a host to cache a list of end host ip addresses where a RFC3168 bottleneck has been detected. Entries in such a cache would need to age-out after a period of time to account for IP address changes, path changes, equipment upgrades, etc.</t> 
+
+          <t>It has been suggested that a public blacklist of domains that implement RFC3168 FIFO bottlenecks or a public whitelist of domains that are participating in L4S experiment could be maintained. While this may be possible, a number of significant issues would need to be addressed, not the least of which is the fact that presence of RFC3168 FIFO bottlenecks or L4S bottlenecks is not a property of a domain, it is the property of a path between two endpoints.</t>
+        </section>
+      </section>
+
+      <section title="Operator of a Network">
+        <t>While it is, of course, preferred for networks to deploy L4S-capable high fidelity congestion signaling, and while it is more preferable for L4S senders to detect problems themselves, a network operator who has deployed equipment in a likely bottleneck link location (i.e. a link that is expected to be fully saturated) that is configured with an <xref target="RFC3168"/> FIFO AQM can take certain steps in order to improve rate fairness between classic traffic and L4S traffic, and thus enable L4S to be deployed in a greater number of paths.</t>
+
+        <section title="Configure AQM to treat ECT1 as NotECT">
+          <t>If equipment is configurable in such as way as to only supply CE marks to ECT0 packets, and treat ECT1 packets identically to NotECT, or is upgradable to support this capability, doing so will eliminate the risk of unfairness.</t>
+        </section>
+
+
+
+        <section title="Configure Non-Coupled Dual Queue">
+          <t>Equipment supporting <xref target="RFC3168"/> may be configurable to enable two parallel queues for the same traffic class, with classification done based on the ECN field.</t>
+
+          <t>Option 1: <list style="symbols">
+            <t>Configure 2 queues, both with ECN; 50:50 WRR scheduler </t>
+            <t>Queue #1: ECT1 &amp; CE packets - Shallow immediate AQM target </t>
+            <t>Queue #2: ECT0 &amp; NotECT packets - Classic AQM target </t>
+            <t>Outcome  <list style="symbols">
+              <t>n L4S flows and m long-running Classic flows</t>
+              <t>if m &amp; n are non-zero, get 1/2n and 1/2m of the capacity, otherwise 1/n or 1/m</t>
+              <t>never &lt; 1/2 each flow's rate if all had been Classic</t></list></t>
+            </list></t>
+          <t>This option would allow L4S flows to achieve low latency, low loss and scalable throughput, but would sacrifice the more precise flow balance offered by <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>.  This option would be expected to result in some reordering of previously CE marked packets sent by Classic ECN senders, which is a trait shared with <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>. As is discussed in <xref target="I-D.ietf-tsvwg-ecn-l4s-id"/>, this reordering would be of very low risk.</t> 
+
+
+          <t>Option 2:<list style="symbols">
+            <t>Configure 2 queues, both with AQM; 50:50 WRR scheduler </t>
+            <t>Queue #1: ECT1 &amp; NotECT packets - ECN disabled </t>
+            <t>Queue #2: ECT0 &amp; CE packets - ECN enabled </t>
+            <t>Outcome <list style="symbols">
+              <t>ECT1 treated as NotECT</t>
+              <t>Flow balance for the 2 queues the same as in option 1</t></list></t>
+            </list></t>
+            <t>This option would not allow L4S flows to achieve low latency, low loss and scalable throughput in this bottleneck link.  As a result it is a less prefered option.</t>
+        </section>
+
+        <section title="WRED with ECT1 Differentation">
+          <t>This configuration is similar to Option 2 in the previous section, but uses a single queue with WRED functionality.</t>
+          <t><list style="symbols">
+            <t>Configure the queue with two WRED classes </t>
+            <t>Class #1: ECT1 &amp; NotECT packets - ECN disabled </t>
+            <t>Class #2: ECT0 &amp; CE packets - ECN enabled </t>
+          </list></t>
+        </section>
+
+        <section title="ECT1 Tunnel Bypass">
+          <t>Using an RFC6040 compatibility mode tunnel, tunnel ECT1 traffic through the <xref target="RFC3168"/> bottleneck with the outer header indicating Not-ECT.</t>
+          <t>Two variants <list style="numbers">
+            <t>per-domain: tunnel ECT1 pkts to domain edge towards dst</t>
+            <t>per-dst: tunnel ECT1 pkts to dst</t>
+          </list></t>
+        </section>
+
+
+        <section title="Disable RFC3168 ECN Marking"><t>While not a recommended alternative, disabling <xref target="RFC3168"/> ECN marking eliminates the unfairness issue. Clearly a downside to this approach is that classic senders will no longer get the benefits of Explict Congestion Notification.</t></section>
+
+        <section title="Re-mark ECT1 to NotECT Prior to AQM"><t>While not a recommended alternative, remarking ECT1 packets as NotECT ensures that they are treated identically to classic NotECT senders. However, this also eliminates the possibility of downstream L4S bottlenecks providing high fidelity congestion signals.</t></section>
+
+      </section>
+
+      <section title="Researchers">
+        <section title="Detection of Classic ECN FIFO Bottlenecks">
+          <t>TODO: Describe active testing methods, in-band or out-of-band, that can distinguish FIFO from FQ.</t>
+        </section>
+        <section title="End-to-end measurement of L4S vs. Classic performance">
+          <t>TBD</t>
+        </section>
+      </section>
+
+      <section anchor="Contributors" title="Contributors">
+       <t>Thanks to Bob Briscoe, Jake Holland, Koen De Schepper, Olivier Tilmans, Tom Henderson, Asad Ahmed, and members of the TSVWG mailing list for their contributions to this document. </t>
+      </section>
+
+     <section anchor="IANA" title="IANA Considerations">
+       <t>None.</t>
+     </section>
+
+     <section anchor="Security" title="Security Considerations">
+      <t>None.</t>
+    </section>
+  </middle>
+
+  <!--  *****BACK MATTER ***** -->
+
+  <back>
+
+   <references title="Informative References">
+     <!-- Here we use entities that we defined at the beginning. -->
+     &RFC2119;
+     &RFC8174;
+     &RFC8290;
+     &RFC3168;
+     <?rfc include="reference.I-D.ietf-tsvwg-l4s-arch" ?>
+     <?rfc include="reference.I-D.ietf-tsvwg-aqm-dualq-coupled" ?>
+     <?rfc include="reference.I-D.ietf-tsvwg-ecn-l4s-id" ?>
+    </references>
+
+  </back>
+</rfc>
+
+<!-- vim: ft=xml tabstop=2 expandtab:
+-->

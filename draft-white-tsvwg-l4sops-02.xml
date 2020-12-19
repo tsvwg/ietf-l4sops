@@ -88,7 +88,7 @@ please see http://xml.resource.org/authoring/README.html. -->
         keywords will be used for the search engine. -->
 
         <abstract>
-         <t>This draft is intended to provide guidance to operators of end-systems, operators of networks, and researchers in order to ensure successful deployment of L4S in the Internet. It includes mechanisms that are intended to promote reasonable fairness between L4S and Classic flows sharing a single-queue <xref target="RFC3168"/> bottleneck link.  This draft identifies opportunites to prevent and/or detect and resolve fairness problems in such networks.  </t>
+         <t>This draft is intended to provide guidance to operators of end-systems, operators of networks, and researchers in order to ensure successful deployment of L4S in the Internet. Its focus is on mechanisms that can be used to avoid unfairness between L4S and Classic flows sharing a single-queue <xref target="RFC3168"/> bottleneck link.  This draft identifies opportunites to prevent and/or detect and resolve fairness problems in such networks.  </t>
        </abstract>
      </front>
 
@@ -103,11 +103,21 @@ please see http://xml.resource.org/authoring/README.html. -->
         <t>The root cause of this unfairness is that <xref target="RFC3168"/> does not differentiate between packets marked ECT0 (used by classic senders) and those marked ECT1 (used by L4S senders), and provides an identical congestion signal (CE marks) to both classes, while the L4S architecture redefines the CE mark and congestion response in the case of ECT1 marked packets. The result is that the two classes respond differently to the CE congestion signal. The classic senders expect that CE marks are sent very rarely (e.g. approximately 1 CE mark every 200 round trips on a 50 Mbps x 50ms path) while the L4S senders expect very frequent CE marking (e.g. approximately 2 CE marks per round trip). The result is that the classic senders respond to the CE marks provided by the bottleneck by yielding capacity to the L4S flows. While this has not been demonstrated to cause starvation of the classic flows, the resulting rate imbalance can be demonstrated, and could be a cause of concern.</t>
       </section>
 
-      <section title="Per-Flow Fairness">
-        <t>There are a number of factors that influence the relative rates achieved by a set of congestion controlled flows sharing a queue in a bottleneck link. </t>
-        <t>TODO: discuss startup &amp; convergence times, short flows, RTT-unfairness, differences in deployed CC algorithms, etc. </t>
-        <t>TODO: also mention that flow sharding is commonplace, so per-flow fairness does not imply per-application fairness</t>
-        <t>Comments received: per-end-host fairness or per-customer fairness may be more important than per-flow fairness</t>
+      <section title="Fairness and Harm">
+        <t>There are a number of factors that influence the relative rates achieved by a set of users or a set of applications sharing a queue in a bottleneck link. Notably the response that each application has to congestion signals (whether loss or explicit signaling) can play a large role in determining whether the applications share the bandwidth in an equitable manner. The traditional norm for congestion response is that it is handled on a per-connection basis, and that (all else being equal) it results in each connection in the bottleneck achieving a data rate inversely proportional to the average RTT of the connection. The end result (in the case of steady-state behavior of a set of like connections) is that each user or application achieves a data rate proportional to N/RTT, where N is the number of simultaneous connections that the user or application creates, and RTT is the harmonic mean of the average round-trip-times for those connections. Thus, users or applications that create a larger number of connections and/or that have a lower RTT achieve a larger share of the bottleneck link rate than others.</t> 
+
+        <t>While this may not be considered fair by many, it is nonetheless the typical starting point for discussions around fairness. In fact it is common when evaluating new congestion responses to actually set aside N &amp; RTT as variables in the equation, and just compare per-flow rates between flows with the same RTT. For example [RFC 5348] defines the congestion response for a flow to be '"reasonably fair" if its sending rate is generally within a factor of two of the sending rate of a [Reno] TCP flow under the same conditions.' Given that RTTs can vary by roughly two orders of magnitude and flow counts can vary by at least an order of magnitude between applications, it seems that the accepted definition of reasonable fairness leaves quite a bit of room for different levels of performance between users or applications, and so perhaps isn't the gold standard, but is rather a metric that is used because of its convenience.</t>
+
+        <t>Since <xref target="I-D.ietf-tsvwg-ecn-l4s-id"/> compliant senders are required to adopt a congestion response that eliminates RTT bias as much as possible, L4S already aims at a level of per-flow fairness far beyond what is ordinarily considered for classic senders.</t>
+
+        <t>Additionally, the congestion control algorithms deployed currently on the internet tend toward (RTT-weighted) fairness only over long timescales. For example, the cubic algorithm can take minutes to converge to fairness when a new flow joins an existing flow on a link <xref target="Cubic"/>.  Since the vast majority of TCP connections don't last for minutes, it is unclear to what degree per-flow, same-RTT fairness, even when demonstrated in the lab, translates to the real world.</t>
+
+        <t>So, in real networks, where per-application, per-end-host or per-customer fairness may be more important that long-term, same-RTT, per-flow fairness, it may not be that instructive to focus on the latter as being a necessary or desirable end goal.</t>
+
+        <t>Nonetheless, situations in which the presence of an L4S flow has the potential to cause significant "harm" (<xref target="Harm"/>) to classic flows need to be understood and monitored. </t>
+
+        <t>Aligned with this context, the guidance provided in this document is aimed not at monitoring the relative performance of L4S senders compared against classic senders on a per-flow basis, but rather at identifying instances where RFC3168 bottlenecks are deployed so that operators of L4S senders can have the opportunity to revert to classic behavior.  Additionally this document provides guidance for network operators around configuring any RFC3168 bottlenecks to minimize the potential for negative interactions between L4S and classic senders. </t>
+
       </section>
 
       <section title="Operator of an L4S host">
@@ -257,6 +267,34 @@ please see http://xml.resource.org/authoring/README.html. -->
      <?rfc include="reference.I-D.ietf-tsvwg-l4s-arch" ?>
      <?rfc include="reference.I-D.ietf-tsvwg-aqm-dualq-coupled" ?>
      <?rfc include="reference.I-D.ietf-tsvwg-ecn-l4s-id" ?>
+
+
+      <reference anchor="Cubic" target="https://www.cs.princeton.edu/courses/archive/fall16/cos561/papers/Cubic08.pdf">
+        <front>
+          <title>CUBIC: A New TCP-Friendly High-Speed TCP Variant</title>
+          <author initials="S." surname="Ha" />
+          <author initials="I." surname="Rhee" />
+          <author initials="L." surname="Xu" />
+          <date year="2008" />
+        </front>
+        <seriesInfo name="ACM SIGOPS Operating Systems Review" value="" />
+      </reference>
+
+      <reference anchor="Harm" target="https://www.cs.cmu.edu/~rware/assets/pdf/ware-hotnets19.pdf">
+        <front>
+          <title>Beyond Jain's Fairness Index: Setting the Bar For The Deployment of Congestion Control Algorithms</title>
+          <author initials="R." surname="Ware" />
+          <author initials="M." surname="Mukerjee" />
+          <author initials="S." surname="Seshan" />
+          <author initials="J." surname="Sherry" />
+          <date year="2019" />
+        </front>
+        <seriesInfo name="Hotnets'19" value="" />
+      </reference>
+
+     
+
+     
     </references>
 
   </back>

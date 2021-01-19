@@ -36,7 +36,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 <?rfc subcompact="no" ?>
 <!-- keep one blank line between list items -->
 <!-- end of list of popular I-D processing instructions -->
-<rfc category="info" docName="draft-white-tsvwg-l4sops-01" ipr="trust200902">
+<rfc category="info" docName="draft-white-tsvwg-l4sops-02" ipr="trust200902">
  <!-- category values: std, bcp, info, exp, and historic
     ipr values: trust200902, noModificationTrust200902, noDerivativesTrust200902,
        or pre5378Trust200902
@@ -64,7 +64,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 
 
-   <date year="2020" />
+   <date year="2021" />
 
    <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
         in the current day for you. If only the current year is specified, xml2rfc will fill 
@@ -96,6 +96,9 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 
       <section title="Introduction">
+
+        <t>TODO: make these statements: there could be an issue, but authors unaware of deployment of 3168 bottlenecks. operators who believe that 3168 is deployed in their network should either take action as discussed in this doc, or not participate in L4S experiment (and inform the IETF at tsvwg@ietf.org). It was agreed (in ECN-L4S-ID) that robust performance in presence of 3168 was not critical, since it was believed that they are rare </t>
+
         <t>In the majority of network paths, including paths where the bottleneck link utilizes packet drops (either due to buffer overrun or active queue management) in response to congestion, as well as paths that implement a 'flow-queuing' scheduler such as <xref target="RFC8290">fq_codel</xref> or CAKE, and those that implement dual-Q-coupled AQM, L4S traffic generally coexists well with classic congestion controlled traffic.</t>
 
         <t>On network paths where the bottleneck link instead implements a shared-queue (FIFO) with an Active Queue Management algorithm that provides Explicit Congestion Notification signaling according to <xref target="RFC3168"/>, it has been demonstrated that when a set of long-running flows comprising both "Classic" congestion controlled flows and L4S-compliant congestion controlled flows compete for bandwidth, the classic congestion controlled flows may achieve lower throughput when compared to the L4S congestion controlled flows.  This 'unfairness' between the two classes appears to be more pronounced on longer RTT paths (e.g. 50ms and above) and/or at higher link rates (e.g. 50 Mbps and above).</t>
@@ -120,7 +123,38 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       </section>
 
+      <section title="Detection of Classic ECN FIFO Bottlenecks">
+                  
+        <t>TODO:  Dicuss active testing campaigns to identify RFC3168 that could be performed by researchers, end system deployers, network operators</t>
+        <t>Experimental design recommendations:
+        <list style="symbols">
+          <t>Simultaneous downloads (L4S and Classic) and comparing flow completion time</t>
+          <t>Bob to provide some suggestions here</t>
+        </list></t>
+        <t>TODO: Describe active testing methods, in-band or out-of-band, that can distinguish FIFO from FQ.</t>
+      </section>
+
       <section title="Operator of an L4S host">
+
+      <t>TODO: re-work this section to cover:</t>
+
+      <t>Expect deployers will run A/B testing before deployment of any new CC.  This A/B testing should/could include testing for 3168 issues as discussed in prev. section</t>
+
+      <t>If you are concerned about issues from presence of undetected RFC3168 bottlenecks:
+        <list style="symbols">
+        <t> General purpose servers
+          <list style="symbols">
+          <t>Likely not needed for short transactional transfers (e.g. sub 10 seconds)</t>
+          <t>Active test: javascript simultaneous downloads (L4S and ClassicECN) likely not as a pre-roll test for web, but could run during reading time to survey for presence of 3168 </t>
+          <t>Passive testing: built in to transport protocol implementation at sender and raise alarm?  Link to report on fallback</t>
+          </list></t>
+        <t>Specialized servers handling long-running sessions (e.g. cloud gaming)
+          <list style="symbols">
+          <t>could do active test at session startup, </t>
+          <t>integrated into service pre-validation done by user, </t>
+          </list></t>
+        </list></t>
+
 
         <t>Support for L4S involves both endpoints: ECT1 marking &amp; L4S-compatible congestion control on the sender, and ECN feedback on the receiver. Between these two entities, it is incumbent upon the sender to evaluate the potential for unfairness and make decisions whether or not to use L4S congestion control. The receiver is not expected to perform any testing or monitoring for unfairness, and is also not expected to invoke any active response in the case that unfairness occurs.</t> 
 
@@ -233,9 +267,7 @@ please see http://xml.resource.org/authoring/README.html. -->
       </section>
 
       <section title="Researchers">
-        <section title="Detection of Classic ECN FIFO Bottlenecks">
-          <t>TODO: Describe active testing methods, in-band or out-of-band, that can distinguish FIFO from FQ.</t>
-        </section>
+
         <section title="End-to-end measurement of L4S vs. Classic performance">
           <t>TBD</t>
         </section>

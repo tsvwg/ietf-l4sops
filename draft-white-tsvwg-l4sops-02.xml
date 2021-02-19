@@ -88,7 +88,7 @@ please see http://xml.resource.org/authoring/README.html. -->
         keywords will be used for the search engine. -->
 
         <abstract>
-         <t>This draft is intended to provide guidance to operators of end-systems, operators of networks, and researchers in order to ensure successful deployment of L4S in the Internet. Its focus is on mechanisms that can be used to avoid unfairness between L4S and Classic flows sharing a single-queue <xref target="RFC3168"/> bottleneck link. This draft identifies opportunites to prevent and/or detect and resolve fairness problems in such networks.  </t>
+         <t>This document is intended to provide additional guidance to operators of end-systems, operators of networks, and researchers beyond that provided in [TODO: insert xrefs] in order to ensure successful deployment of L4S in the Internet. The focus of this document is on potential interactions between L4S flows and Classic ECN (<xref target="RFC3168"/>) flows in Classic ECN bottleneck links. The document discusses the potential outcomes of these interactions, describes mechanisms to detect the presence of <xref target="RFC3168"/> bottlenecks, and identifies opportunites to prevent and/or detect and resolve fairness problems in such networks.  </t>
        </abstract>
      </front>
 
@@ -97,9 +97,9 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       <section title="Introduction">
 
-        <t>In the majority of network paths, L4S traffic generally coexists well with classic congestion controlled traffic. This includes paths where the bottleneck link utilizes packet drops in response to congestion (either due to buffer overrun or active queue management), as well as paths that implement a 'flow-queuing' scheduler such as <xref target="RFC8290">fq_codel</xref> or CAKE, and those that implement dual-Q-coupled AQM. </t>
+        <t>L4S traffic is expected to coexist well with classic congestion controlled traffic on the majority of network paths. This includes paths where the bottleneck link utilizes packet drops in response to congestion (either due to buffer overrun or active queue management), as well as paths that implement a 'flow-queuing' scheduler such as <xref target="RFC8290">fq_codel</xref> or CAKE, and those that implement dual-Q-coupled AQM. </t>
 
-        <t>On network paths where the bottleneck link instead implements a shared-queue (FIFO) with an Active Queue Management algorithm that provides Explicit Congestion Notification signaling according to <xref target="RFC3168"/>, it has been demonstrated that when a set of long-running flows comprising both "Classic" congestion controlled flows and L4S-compliant congestion controlled flows compete for bandwidth, the classic congestion controlled flows may achieve lower throughput when compared to the L4S congestion controlled flows.  This 'unfairness' between the two classes appears to be more pronounced on longer RTT paths (e.g. 50ms and above) and/or at higher link rates (e.g. 50 Mbps and above).</t>
+        <t>On network paths where the bottleneck link instead implements a shared-queue (FIFO) with an Active Queue Management algorithm that provides Explicit Congestion Notification signaling according to <xref target="RFC3168"/>, it has been demonstrated that when a set of long-running flows comprising both classic congestion controlled flows and L4S-compliant congestion controlled flows compete for bandwidth, the classic congestion controlled flows may achieve lower throughput than they would have if all of the flows had been classic congestion controlled flows.  This 'unfairness' between the two classes appears to be more pronounced on longer RTT paths (e.g. 50ms and above) and/or at higher link rates (e.g. 50 Mbps and above).</t>
         
         <t>The root cause of this unfairness is that <xref target="RFC3168"/> does not differentiate between packets marked ECT0 (used by classic senders) and those marked ECT1 (used by L4S senders), and provides an identical congestion signal (CE marks) to both classes, while the L4S architecture redefines the CE mark and congestion response in the case of ECT1 marked packets. The result is that the two classes respond differently to the CE congestion signal. The classic senders expect that CE marks are sent very rarely (e.g. approximately 1 CE mark every 200 round trips on a 50 Mbps x 50ms path) while the L4S senders expect very frequent CE marking (e.g. approximately 2 CE marks per round trip). The result is that the classic senders respond to the CE marks provided by the bottleneck by yielding capacity to the L4S flows. While this has not been demonstrated to cause starvation of the classic flows, the resulting rate imbalance can be demonstrated, and could be a cause of concern.</t> 
 
@@ -133,6 +133,10 @@ please see http://xml.resource.org/authoring/README.html. -->
           <t>Bob to provide some suggestions here</t>
         </list></t>
         <t>TODO: Describe active testing methods, in-band or out-of-band, that can distinguish FIFO from FQ.</t>
+        <t>Minimize intrusiveness of the detection engine in the applications (i.e., push it inside the kernel, introduce as few new metrics as possible, ...)</t>
+        <t>Explicitly call out research/measurement networks (RIPE Atlas?)</t>
+
+
       </section>
 
       <section title="Operator of an L4S host">
@@ -140,6 +144,8 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>TODO: re-work this section to cover:</t>
 
       <t>Expect deployers will run A/B testing before deployment of any new CC.  This A/B testing should/could include testing for 3168 issues as discussed in prev. section</t>
+
+      <t>Explain why such an operator might be concerned about undetected RFC3168 bottlenecks</t>
 
       <t>If you are concerned about issues from presence of undetected RFC3168 bottlenecks:
         <list style="symbols">
@@ -164,9 +170,9 @@ please see http://xml.resource.org/authoring/README.html. -->
         <t>TODO: also need to discuss how/when to re-enable L4S if it becomes disabled</t>
 
         <section title="CDN Servers">
-          <t>Some hosts (such as CDN leaf nodes and servers internal to an ISP) are deployed in environments in which they serve content to a constrained set of networks or clients. The operator of such hosts may be able to determine whether there is the possibility of <xref target="RFC3168"/> FIFO bottlenecks being present, and utilize this information to make decisions on selectively deploying L4S.  Furthermore, such an operator may be able to determine the likelihood of an L4S bottleneck being present, and use this information as well.</t>  
+          <t>Some hosts (such as CDN leaf nodes and servers internal to an ISP) are deployed in environments in which they serve content to a constrained set of networks or clients. The operator of such hosts may be able to determine whether there is the possibility of <xref target="RFC3168"/> FIFO bottlenecks being present, and utilize this information to make decisions on selectively deploying L4S and/or disabling it (e.g. bleaching ECN).  Furthermore, such an operator may be able to determine the likelihood of an L4S bottleneck being present, and use this information as well.</t>  
           
-          <t>For example, if a particular network is known to have deployed <xref target="RFC3168"/> FIFO bottlenecks, deployment of L4S should be delayed until those bottlenecks can be upgraded to mitigate any potential issues as discussed in the next section.</t>
+          <t>For example, if a particular network is known to have deployed <xref target="RFC3168"/> FIFO bottlenecks, deployment of L4S for that network should be delayed until those bottlenecks can be upgraded to mitigate any potential issues as discussed in the next section.</t>
           
           <t>If a particular network offers connectivity to other networks (e.g. in the case of an ISP offering service to their customer's networks), the lack of RFC3168 FIFO bottleneck deployment in the ISP network can't be taken as evidence that RFC3168 FIFO bottlenecks don't exist end-to-end (because one may have been deployed by the end-user network). In these cases, deployment of L4S will need to take appropriate steps to detect the presence of such bottlenecks. At present, it is believed that the vast majority of RFC3168 bottlenecks in end-user networks are implementations that utilize fq_codel or Cake, where the unfairness problem does not exist. While this doesn't completely eliminate the possibility that a <xref target="RFC3168"/> FIFO bottleneck could exist, it nonetheless provides useful information that can be utilized in the decision making around the potential risk for any unfairness to be experienced by end users.</t>
 
@@ -204,7 +210,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
           <t>Since existing studies have hinted that RFC3168 FIFO bottlenecks are rare, detections using these techniques may also prove to be rare. Therefore, it may be possible for a host to cache a list of end host ip addresses where a RFC3168 bottleneck has been detected. Entries in such a cache would need to age-out after a period of time to account for IP address changes, path changes, equipment upgrades, etc.</t> 
 
-          <t>It has been suggested that a public blacklist of domains that implement RFC3168 FIFO bottlenecks or a public whitelist of domains that are participating in L4S experiment could be maintained. While this may be possible, a number of significant issues would need to be addressed, not the least of which is the fact that presence of RFC3168 FIFO bottlenecks or L4S bottlenecks is not a property of a domain, it is the property of a path between two endpoints.</t>
+          <t>[TODO: write in stronger terms why this wouldn't work] It has been suggested that a public blacklist of domains that implement RFC3168 FIFO bottlenecks or a public whitelist of domains that are participating in L4S experiment could be maintained. While this may be possible, a number of significant issues would need to be addressed, not the least of which is the fact that presence of RFC3168 FIFO bottlenecks or L4S bottlenecks is not a property of a domain, it is the property of a path between two endpoints.</t>
         </section>
       </section>
 

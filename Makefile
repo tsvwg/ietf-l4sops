@@ -1,9 +1,13 @@
 DOC := draft-white-tsvwg-l4sops-02
 XML := $(DOC).xml
 TXT := $(DOC).txt
+HTML := $(DOC).html
 
 .DEFAULT_GOAL: $(TXT)
 
-$(TXT): $(XML) ; xml2rfc $<
+all: $(TXT) $(HTML)
 
-clean: ; $(RM) $(TXT)
+$(TXT): $(XML) ; xml2rfc $<
+$(HTML): $(XML) ; xml2rfc --html $<
+
+clean: ; $(RM) $(TXT) $(HTML)

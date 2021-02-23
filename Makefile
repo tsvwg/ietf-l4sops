@@ -1,4 +1,4 @@
-DOC := draft-white-tsvwg-l4sops-02
+DOC := draft-white-tsvwg-l4sops-03
 XML := $(DOC).xml
 TXT := $(DOC).txt
 HTML := $(DOC).html

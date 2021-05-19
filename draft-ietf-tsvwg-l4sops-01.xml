@@ -147,9 +147,8 @@ please see http://xml.resource.org/authoring/README.html. -->
         </section>
       </section>
 
-      
       <section><name>Server deployment environment</name>
-      <t>In addition, the responsibilities of and actions taken by a sender may depend on the environment in which it is deployed. The following sub-sections discuss two scenarios: senders serving a limited, known target audience and those that serve an unknown target audience.</t>
+      <t>The responsibilities of and actions taken by a sender may additionally depend on the environment in which it is deployed. The following sub-sections discuss two scenarios: senders serving a limited, known target audience and those that serve an unknown target audience.</t>
 
       <section><name>Edge Servers</name>
         <t>Some hosts (such as CDN leaf nodes and servers internal to an ISP) are deployed in environments in which they serve content to a constrained set of networks or clients. The operator of such hosts may be able to determine whether there is the possibility of <xref target="RFC3168"/> FIFO bottlenecks being present, and utilize this information to make decisions on selectively deploying L4S and/or disabling it (e.g. bleaching ECN). Furthermore, such an operator may be able to determine the likelihood of an L4S bottleneck being present, and use this information as well.</t>
@@ -178,8 +177,8 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>Some of the options listed in this section may not be feasible in all networking equipment.</t>
 
       <section><name>Preferred Options</name>
-      <section><name>Upgrade AQMs to Dual-Q Coupled AQM</name>
-      <t>TODO: describe this option.</t>
+      <section><name>Upgrade AQMs to an L4S-aware AQM</name>
+      <t>If the RFC3168 AQM implementation can be upgraded to enable support for L4S, either via <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/> or via an L4S-aware FQ implementation, this is the preferred approach to addressing potential unfairness, because it additionally enables all of the benefits of L4S.</t>
       </section>
 
       <section anchor="non-coupled-shallow"><name>Configure Non-Coupled Dual Queue with Shallow Target</name>
@@ -204,7 +203,9 @@ please see http://xml.resource.org/authoring/README.html. -->
         <t>This option would allow L4S flows to achieve low latency, low loss and scalable throughput, but would sacrifice the more precise flow balance offered by <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>. This option would be expected to result in some reordering of previously CE marked packets sent by Classic ECN senders, which is a trait shared with <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>. As is discussed in <xref target="I-D.ietf-tsvwg-ecn-l4s-id"/>, this reordering would be either zero risk or very low risk.</t>
       </section>
 
-      <section><name>AFD</name>
+      <section><name>Approximate Fair Dropping</name>
+        <t>The Approximate Fair Dropping (<xref target="AFD"/>) algorithm tracks individual flow rates and introduces either packet drops or CE-marks to each flow in proportion to the amount by which the flow rate exceeds a computed per-flow fair-share rate. <xref target="Cisco-N9000"/></t>
+
         <t>TODO: Bob offered to provide text for this section.</t>
       </section>
 
@@ -263,10 +264,10 @@ please see http://xml.resource.org/authoring/README.html. -->
       </section>
     </section>
       <section><name>Last Resort Options</name>
-      <t>In case that serious issues are detected where the presence of L4S flows is determined to be the likely cause, the options in this section can be considered as a last resort to rectify the situation.</t>
+      <t>If serious issues are detected, where the presence of L4S flows is determined to be the likely cause, and none of the above options are implementable, the options in this section can be considered as a last resort.  These options are not recommended.</t>
 
       <section><name>Disable RFC3168 Support</name>
-        <t>Disabling an <xref target="RFC3168"/> AQM from CE marking both ECT(0) traffic and ECT(1) traffic eliminates the unfairness issue. A downside to this approach is that classic senders will no longer get the benefits of Explict Congestion Notification at this bottleneck link. This alternative is only mentioned in case there is no other way to reconfigure an RFC3168 AQM.</t>
+        <t>Disabling an <xref target="RFC3168"/> AQM from CE marking both ECT(0) traffic and ECT(1) traffic eliminates the unfairness issue. A downside to this approach is that classic senders will no longer get the benefits of Explict Congestion Notification at this bottleneck link either. This alternative is only mentioned in case there is no other way to reconfigure an RFC3168 AQM.</t>
       </section>
 
       <section><name>Re-mark ECT(1) to NotECT Prior to AQM</name>
@@ -293,12 +294,12 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 <t>This section gives guidance on how L4S-deploying networks and endpoints should respond to either of the two possible outcomes of the IETF-supported L4S experiment.</t>
 
-<section><name>Successful termination of the L4S experiment</name>
+<section><name>Termination of a successful L4S experiment</name>
 
 <t>If the L4S experiment is deemed successful, the IETF would be expected to move the L4S specifications to standards track.  Networks would then be encouraged to continue/begin deploying L4S-aware nodes and to replace all non-L4S-aware RFC3168 AQMs already deployed as far as feasible, or at least restrict RFC3168 AQM to interpret ECT(1) equal to NotECT. Networks that participated in the experiment would be expected to track the evolution of the L4S standards and adapt their implementations accordingly (e.g. if as part of switching from experimental to standards track, changes in the L4S RFCs become necessary).</t>
 </section>
 
-<section><name>Unsuccessful termination of the L4S experiment</name>
+<section><name>Termination of an unsuccessful L4S experiment</name>
 
 <t>If the L4S experiment is deemed unsuccessful due to lack of deployment of compliant end-systems or AQMs, it might need to be terminated: any L4S network nodes should then be un-deployed and the ECT(1) codepoint usage should be released/recycled as quickly as possible, recognizing that this process may take some time. To facilitate this potential outcome, <xref target="I-D.ietf-tsvwg-ecn-l4s-id"/> requires L4S hosts to be configurable to revert to non-L4S congestion control, and networks to be configurable to treat ECT(1) the same as ECT(0).</t>
 </section>
@@ -544,6 +545,39 @@ please see http://xml.resource.org/authoring/README.html. -->
           <date year="2019"/>
         </front>
       </reference>
+
+      <reference anchor="Cisco-N9000" target="https://www.cisco.com/c/en/us/products/collateral/switches/nexus-9000-series-switches/white-paper-c11-738488.html">
+        <front>
+          <title>Intelligent Buffer Management on Cisco Nexus 9000 Series Switches White Paper</title>
+          <seriesInfo name="Cisco Product Document" value="1486580292771926"/>
+          <author />
+          <date year="2017" month="June" day="6"/>
+        </front>
+      </reference>
+
+      <reference anchor="AFD" target="https://people.eecs.berkeley.edu/~istoica/classes/cs268/10/papers/afd.pdf">
+        <front>
+          <title>Approximate Fairness through Differential Dropping</title>
+          <seriesInfo name="Computer Comm. Rev." value="vol.33, no.1"/>
+          <author surname="Pan" initials="R"/>
+          <author surname="Breslau" initials="L"/>
+          <author surname="Prabhakar" initials="B"/>
+          <author surname="Shenker" initials="S"/>
+          <date year="2003" month="Jan"/>
+        </front>
+      </reference>
+
+      <reference anchor="AFD-NFT" target="http://web.stanford.edu/~balaji/papers/03approximatefair.pdf">
+        <front>
+          <title>Approximate Fair Allocation of Link Bandwidth</title>
+          <seriesInfo name="IEEE Computer Society" value=""/>
+          <author surname="Pan" initials="R"/>
+          <author surname="Prabhakar" initials="B"/>
+          <author surname="Breslau" initials="L"/>
+          <author surname="Shenker" initials="S"/>
+        </front>
+      </reference>
+
 
     </references>
   </back>

@@ -27,7 +27,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 <?rfc subcompact="no" ?>
 <!-- keep one blank line between list items -->
 <!-- end of list of popular I-D processing instructions -->
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="info" docName="draft-ietf-tsvwg-l4sops-00" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="4" symRefs="true" sortRefs="true" version="3">
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="info" docName="draft-ietf-tsvwg-l4sops-01" ipr="trust200902" obsoletes="" updates="" submissionType="IETF" xml:lang="en" tocInclude="true" tocDepth="4" symRefs="true" sortRefs="true" version="3">
   <!-- xml2rfc v2v3 conversion 2.39.0 -->
   <!-- category values: std, bcp, info, exp, and historic
     ipr values: trust200902, noModificationTrust200902, noDerivativesTrust200902,
@@ -100,8 +100,10 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>Aligned with this context, the guidance provided in this document is aimed not at monitoring the relative performance of L4S senders compared against classic senders on a per-flow basis, but rather at identifying instances where RFC3168 bottlenecks are deployed so that operators of L4S senders can have the opportunity to assess whether any actions need to be taken. Additionally this document provides guidance for network operators around configuring any RFC3168 bottlenecks to minimize the potential for negative interactions between L4S and classic senders. </t>
     </section>
 
-    <section><name>Flow Queuing Systems</name>
-     <t>As noted above, the concern around RFC3168 coexistence mainly concerns single-queue systems where classic and L4S traffic are mixed.  In a flow-queuing system, when flow isolation is successful, the FQ scheduling of such queues isolates classic congestion control traffic from L4S traffic, and thus eliminates the potential for unfairness. But, these systems are known to sometimes result in imperfect isolation, either due to hash collisions (see <xref target="RFC8290" section="5.3"/>) or because of VPN tunneling (see <xref target="RFC8290" section="6.2"/>). It is believed that the majority of FQ deployments in bottleneck links today (e.g. Cake <xref target="Hoiland-Jorgensen"/>) employ hashing algorithms that virtually eliminate the possibility of collisions, making this a non-issue for those deployments.  But, VPN tunnels remain an issue for FQ deployments, and the introduction of L4S traffic raises the possibility that tunnels containing mixed classic and L4S traffic would exist, in which case FQ implementations that have not been updated to be L4S-aware could exhibit similar unfairness properties as single queue AQMs.  Until such queues are upgraded to support L4S (see <xref target="FQ"/>) or treat ECT(1) as not-ECT traffic, end-host mitigations such as separating L4S and Classic traffic into distinct VPN tunnels could be employed.</t>
+    <section anchor="FQ"><name>Flow Queuing Systems</name>
+     <t>As noted above, the concern around RFC3168 coexistence mainly concerns single-queue systems where classic and L4S traffic are mixed.  In a flow-queuing system, when flow isolation is successful, the FQ scheduling of such queues isolates classic congestion control traffic from L4S traffic, and thus eliminates the potential for unfairness. But, these systems are known to sometimes result in imperfect isolation, either due to hash collisions (see <xref target="RFC8290" section="5.3"/>), because of VPN tunneling (see <xref target="RFC8290" section="6.2"/>), or due to deliberate configuration (see <xref target="per-user"/>).</t> 
+
+     <t>It is believed that the majority of FQ deployments in bottleneck links today (e.g. Cake <xref target="Hoiland-Jorgensen"/>) employ hashing algorithms that virtually eliminate the possibility of collisions, making this a non-issue for those deployments.  But, VPN tunnels remain an issue for FQ deployments, and the introduction of L4S traffic raises the possibility that tunnels containing mixed classic and L4S traffic would exist, in which case FQ implementations that have not been updated to be L4S-aware could exhibit similar unfairness properties as single queue AQMs.  <xref target="FQrecs"/> discusses some remedies that can be implemented by operators of FQ equipment in order to minimize this risk. Additionally, end-host mitigations such as separating L4S and Classic traffic into distinct VPN tunnels could be employed.</t>
     </section>
 
 
@@ -212,9 +214,7 @@ please see http://xml.resource.org/authoring/README.html. -->
       </section>
 
       <section><name>Approximate Fair Dropping</name>
-        <t>The Approximate Fair Dropping (<xref target="AFD"/>) algorithm tracks individual flow rates and introduces either packet drops or CE-marks to each flow in proportion to the amount by which the flow rate exceeds a computed per-flow fair-share rate. <xref target="Cisco-N9000"/></t>
-
-        <t>TODO: Bob offered to provide text for this section.</t>
+        <t>The Approximate Fair Dropping (<xref target="AFD"/>) algorithm tracks individual flow rates and introduces either packet drops or CE-marks to each flow in proportion to the amount by which the flow rate exceeds a computed per-flow fair-share rate. Where an implementation of AFD or an equivalent algorithm is available, it could be enabled on an interface with a single-queue RFC3168 AQM as a fairly lightweight way to inject additional ECN marks into any significantly higher rate flows. See also <xref target="Cisco-N9000"/>.</t>
       </section>
 
       <section><name>Replace RFC3168 FIFO with RFC3168 FQ</name>
@@ -290,20 +290,19 @@ please see http://xml.resource.org/authoring/README.html. -->
     </section>
     </section>
 
-    <section anchor="FQ"><name>Operator of a Network Employing RFC3168 FQ Bottlenecks</name>
+    <section anchor="FQrecs"><name>Operator of a Network Employing RFC3168 FQ Bottlenecks</name>
 
-      <t>A network operator who has deployed flow-queuing systems that implement RFC3168 (e.g. fq_codel or CAKE using default hashing) at network bottlenecks will likely see fewer potential issues when L4S traffic is present on their network as compared to operators of RFC3168 FIFOs. As discussed in previous sections, the flow queuing mechanism will typically isolate L4S flows and Classic flows into separate queues, and the scheduler will then enforce per-flow fairness. As a result, the potential fairness issues between Classic and L4S traffic that can occur in FIFOs will typically not occur in FQ systems.  That said, FQ systems commonly treat a tunneled traffic aggregate as a single flow, and thus a tunneled traffic aggregate that contains a mix of Classic and L4S traffic will utilize a single queue, and could experience the same fairness issue as has been described for RFC3168 FIFOs. This unfairness is compounded by the fact that the FQ scheduler will already be causing unfairness to flows within the tunnel relative to flows that are not tunneled.  Additionally, many of the deployed RFC3168 FQ systems currently implement an AQM algorithm (either CoDel or COBALT) that is designed for Classic traffic and reacts sluggishly to L4S (or unresponsive) traffic, with the result being that L4S senders could in some cases see worse latency performance than Classic senders.</t>
+      <t>A network operator who has deployed flow-queuing systems that implement RFC3168 (e.g. fq_codel or CAKE using default hashing) at network bottlenecks will likely see fewer potential issues when L4S traffic is present on their network as compared to operators of RFC3168 FIFOs. As discussed in <xref target="FQ"/>, the flow queuing mechanism will typically isolate L4S flows and Classic flows into separate queues, and the scheduler will then enforce per-flow fairness. As a result, the potential fairness issues between Classic and L4S traffic that can occur in FIFOs will typically not occur in FQ systems.  That said, FQ systems commonly treat a tunneled traffic aggregate as a single flow, and thus a tunneled traffic aggregate that contains a mix of Classic and L4S traffic will utilize a single queue, and the traffic within the tunnel could experience the same fairness issue as has been described for RFC3168 FIFOs. This unfairness is compounded by the fact that the FQ scheduler will already be causing unfairness to flows within the tunnel relative to flows that are not tunneled (each of which gets the same bandwidth share as does the tunnel).  Additionally, many of the deployed RFC3168 FQ systems currently implement an AQM algorithm (either CoDel or COBALT) that is designed for Classic traffic and reacts sluggishly to L4S (or unresponsive) traffic, with the result being that L4S senders could in some cases see worse latency performance than Classic senders.</t>
 
       <t>While the potential unfairness result is arguably less impactful in the case of RFC3168 FQ bottlenecks, it is believed that RFC3168 FQ bottlenecks are currently more common than RFC3168 FIFO bottlenecks. The most common deployments of RFC3168 FQ bottlenecks are in home routers running OpenWRT firmware where the user has turned the feature on.</t>
       <t>As is the case with RFC3168 FIFOs, the preferred remedy for a network operator that wishes to enable the best performance possible with regard to L4S, is for the network operator to update RFC3168 FQ bottlenecks to be L4S-aware. In cases where that is infeasible, several of the remedies described in the previous section can be used to reduce or eliminate these issues.</t>
       <ul>
         <li>Configure AQM to treat ECT(1) as NotECT </li>
-        <li>ECT(1) Tunnel Bypass</li>
         <li>Disable RFC3168 Support</li>
         <li>Re-mark ECT(1) to NotECT Prior to AQM</li>
       </ul>
 
-      <t>Note that some FQ schedulers can be configured to intentionally aggregate multiple flows into each queue. This might be used, for instance, to implement per-user or per-host fairness rather than per-flow fairness.  In this case, if the flow aggregates contain a mix of Classic and L4S traffic, one would expect to see the same potential unfairness as is seen in the FIFO case. The same remedies mentioned above would apply in this case as well.</t>
+      <t anchor="per-user">Note that some FQ schedulers can be configured to intentionally aggregate multiple flows into each queue. This might be used, for instance, to implement per-user or per-host fairness rather than per-flow fairness.  In this case, if the flow aggregates contain a mix of Classic and L4S traffic, one would expect to see the same potential unfairness as is seen in the FIFO case. The same remedies mentioned above would apply in this case as well.</t>
     </section>
 
 
@@ -326,7 +325,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 
     <section anchor="Contributors"><name>Contributors</name>
-      <t>Thanks to Bob Briscoe, Jake Holland, Koen De Schepper, Olivier Tilmans, Tom Henderson, Asad Ahmed, Gorry Fairhurst, Sebastian Moeller, and members of the TSVWG mailing list for their contributions to this document. </t>
+      <t>Thanks to Bob Briscoe, Jake Holland, Koen De Schepper, Olivier Tilmans, Tom Henderson, Asad Ahmed, Gorry Fairhurst, Sebastian Moeller, Pete Heist, and members of the TSVWG mailing list for their contributions to this document. </t>
     </section>
 
     <section anchor="IANA"><name>IANA Considerations</name>
@@ -479,7 +478,7 @@ please see http://xml.resource.org/authoring/README.html. -->
           <title>Design and Evaluation of COBALT Queue Discipline</title>
           <seriesInfo name="IEEE International Symposium on Local and Metropolitan Area Networks" value="2019"/>
           <author initials="J." surname="Palmei"/>
-          <author initials="" surname="et al."/>
+          <author initials="X" surname="et al."/>
           <date year="2019"/>
         </front>
       </reference>
@@ -513,7 +512,6 @@ please see http://xml.resource.org/authoring/README.html. -->
           <author initials="R" surname="Beverly"/>
           <author initials="A" surname=" Berger"/>
           <date year="2011"/>
-          <!-- Mentions "From conversations with network operators, none reported turning on ECN markings." and "We also find instances where the Congestion Experienced (CE) codepoint is set. Across the two trace sets, there were 98 unique hop pairs for which the ECN field switched to CE. For these pairs, the CE codepoint is often set in conjunction with the diffserv codepoint having a non-zero value, thus in all likelihood the network is making use of the legacy ToS field."  -->
         </front>
       </reference>
       <reference anchor="Bhooma" target="https://datatracker.ietf.org/meeting/98/materials/slides-98-maprg-tcp-ecn-experience-with-enabling-ecn-on-the-internet-padma-bhooma-00">
@@ -522,8 +520,6 @@ please see http://xml.resource.org/authoring/README.html. -->
           <seriesInfo name="98th IETF MAPRG Presentation" value=""/>
           <author initials="P" surname="Bhooma"/>
           <date year="2017"/>
-          <!-- Reports percentage of reports that have seen any CE marking on any of the ECT connections in a 12 hour period: US 0.2%, China 1%, Mexico 3.2%, France 6%, Argentina 30% -->
-          <!-- Later it was discovered that a major ISP in Argentina had misconfigured their AN equipment to overwrite the ECN field with CE -->
         </front>
       </reference>
       <reference anchor="Trammel" target="https://link.springer.com/chapter/10.1007%2F978-3-319-15509-8_15">
@@ -537,7 +533,6 @@ please see http://xml.resource.org/authoring/README.html. -->
           <author surname="Fairhurst" initials="G"/>
           <author surname="Scheffenegger" initials="R"/> 
           <date year="2015"/>
-          <!-- slide deck from MAPRG talk says: "And of ~5 million flows, we saw only two legitimate CE markings." -->
         </front>
       </reference>
 
@@ -567,7 +562,7 @@ please see http://xml.resource.org/authoring/README.html. -->
         <front>
           <title>Intelligent Buffer Management on Cisco Nexus 9000 Series Switches White Paper</title>
           <seriesInfo name="Cisco Product Document" value="1486580292771926"/>
-          <author />
+          <author fullname="Cisco"/>
           <date year="2017" month="June" day="6"/>
         </front>
       </reference>
@@ -583,7 +578,7 @@ please see http://xml.resource.org/authoring/README.html. -->
           <date year="2003" month="Jan"/>
         </front>
       </reference>
-
+<!--
       <reference anchor="AFD-NFT" target="http://web.stanford.edu/~balaji/papers/03approximatefair.pdf">
         <front>
           <title>Approximate Fair Allocation of Link Bandwidth</title>
@@ -592,9 +587,10 @@ please see http://xml.resource.org/authoring/README.html. -->
           <author surname="Prabhakar" initials="B"/>
           <author surname="Breslau" initials="L"/>
           <author surname="Shenker" initials="S"/>
+          <date year="2003"/>
         </front>
       </reference>
-
+-->
 
     </references>
   </back>

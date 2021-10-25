@@ -146,7 +146,7 @@ please see http://xml.resource.org/authoring/README.html. -->
           <ul>
             <li>Out-of-band active testing could be performed by the server. For example, a javascript application could run simultaneous downloads (i.e. with and without L4S) during page reading time in order to survey for presence of RFC3168 FIFO bottlenecks on paths to users (e.g. as described in Section 4 of <xref target="Briscoe"/>). </li>
             <li>In-band testing could be built in to the transport protocol implementation at the sender in order to perform detection (see Section 5 of <xref target="Briscoe"/>, though note that this mechanism does not differentiate between FIFO and FQ).</li>
-            <li>Discontinuing use of L4S based on the detection of RFC3168 FIFO bottlenecks is likely not needed for short transactional transfers (e.g. sub 10 seconds) since these are unlikely to achieve the steady-state conditions where unfairness has been observed.</li>
+            <li>Depending on the details of the L4S congestion control implementation, taking action based on the detection of RFC3168 FIFO bottlenecks may not be needed for short transactional transfers that are unlikely to achieve the steady-state conditions where unfairness is likely to occur.</li>
             <li>For longer file transfers, it may be possible to fall-back to Classic behavior in real-time (i.e. when doing in-band testing), or to cache those destinations where RFC3168 has been detected, and disable L4S for subsequent long file transfers to those destinations.</li>
           </ul>
         </section>

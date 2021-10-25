@@ -136,7 +136,9 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>From a host's perspective, support for L4S only involves the sender via ECT(1) marking &amp; L4S-compatible congestion control. The receiver is involved in ECN feedback but can generally be agnostic to whether ECN is being used for L4S <xref target="I-D.ietf-tsvwg-l4s-arch"/>. Between these two entities, it is primarily incumbent upon the sender to evaluate the potential for presence of RFC3168 FIFO bottlenecks and make decisions whether or not to use L4S congestion control. While is is possible for a receiver to disable L4S functionality by not negotiating ECN, a general purpose receiver is not expected to perform any testing or monitoring for RFC3168, and is also not expected to invoke any active response in the case that such a bottleneck exists.</t>
       
       <t>Prior to deployment of any new technology, it is commonplace for the parties involved in the deployment to validate the performance of the new technology via lab testing, limited field testing, large scale field testing, etc., usually in a progressive manner. The same is expected for deployers of L4S technology. As part of that validation, it is recommended that deployers consider the issue of RFC3168 FIFO bottlenecks and conduct experiments as described in the previous section, or otherwise assess the impact that the L4S technology will have in the networks in which it is to be deployed, and take action as is described further in this section. This sort of progressive (incremental) deployment helps to ensure that any issues are discovered when the scale of those issues is relatively small.</t>
-            <t>TODO: discussion of risk of incorrectly classifying a path</t>
+
+      <t>Some of the recommendations in this section involve the sender determining (through various means) the likelihood of a particular path having a bottleneck that implements single queue RFC3168 AQM. Since this determination can be imprecise, there exists some risk that a path is incorrectly classified. In the case of false-positives (where a path is erroneously believed to contain RFC3168), discontinuing the use of L4S on that path would result in a lost opportunity for low-latency low-loss service, and thus likely an unnecessary degradation in the quality of experience for the user. In the case of false-negatives, the use of L4S has the potential to result in a reduction in the throughput of non-L4S flows while the L4S flow is active.</t>
+
       <section><name>Server Type</name>
       <t>If pre-deployment testing raises concerns about issues with RFC3168 bottlenecks, the actions taken may depend on the server type.</t>
         <section><name>General purpose servers (e.g. web servers)</name>
@@ -162,6 +164,9 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       <section><name>Edge Servers</name>
         <t>Some hosts (such as CDN leaf nodes and servers internal to an ISP) are deployed in environments in which they serve content to a constrained set of networks or clients. The operator of such hosts may be able to determine whether there is the possibility of <xref target="RFC3168"/> FIFO bottlenecks being present, and utilize this information to make decisions on selectively deploying L4S and/or disabling it (e.g. bleaching ECN). Furthermore, such an operator may be able to determine the likelihood of an L4S bottleneck being present, and use this information as well.</t>
+        
+        <t>It is recommended that L4S experimental deployments begin with such servers.</t>
+
         <t>For example, if a particular network is known to have deployed legacy <xref target="RFC3168"/> FIFO bottlenecks, usage of L4S for long capacity-seeking file transfers on that network could be delayed until those bottlenecks can be upgraded to mitigate any potential issues as discussed in the next section.</t>
         <t>Prior to deploying L4S on edge servers a server operator should:
         </t>
@@ -175,7 +180,10 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       <section><name>Other hosts</name>
         <t>Hosts that are deployed in locations that serve a wide variety of networks face a more difficult prospect in terms of handling the potential presence of RFC3168 FIFO bottlenecks. Nonetheless, the steps listed in the ealier section (based on server type) can be taken to minimize the risk of unfairness.</t>
-        <t>The interpretation of studies on ECN usage and their deployment context (see <xref target="studies"/>) has so far concluded that RFC3168 FIFO bottlenecks are likely to be rare, and so detections using these techniques may also prove to be rare. Therefore, it may be possible for a host to cache a list of end host ip addresses where a RFC3168 bottleneck has been detected.  Entries in such a cache would need to age-out after a period of time to account for IP address changes, path changes, equipment upgrades, etc. [TODO: more info on ways to cache/maintain such a list]</t>
+
+        <t>It is recommended that operators of such hosts consider carefully whether these hosts are appropriate for early experimentation with L4S.</t>
+
+        <t>The interpretation of studies on ECN usage and their deployment context (see <xref target="studies"/>) has so far concluded that RFC3168 FIFO bottlenecks are likely to be rare, and so detections using these techniques may also prove to be rare. Additionally, the most recent large scale study <xref target="Holland"/> indicated that there were a small number of networks in which RFC3168 bottlenecks are more prevalent than the global average. Therefore, it may be possible for a host to maintain a list of networks where L4S should not be enabled, and, for other networks, to cache a list of end host ip addresses where a RFC3168 bottleneck has been detected.  Entries in such a cache would need to age-out after a period of time to account for IP address changes, path changes, equipment upgrades, etc. [TODO: more info on ways to cache/maintain such a list]</t>
         <t>It has been suggested that a public block-list of domains that implement RFC3168 FIFO bottlenecks could be maintained. There are a number of significant issues that would seem to make this idea infeasible, not the least of which is the fact that presence of RFC3168 FIFO bottlenecks or L4S bottlenecks is not a property of a domain, it is the property of a link, and therefore of the particular current path between two endpoints.</t>
         <t>It has also been suggested that a public allow-list of domains that are participating in the L4S experiment could be maintained. This approach would not be useful, given the presence of an L4S domain on the path does not imply the absence of RFC3168 AQMs upstream or downstream of that domain. Also, the approach cannot cater for domains with a mix of L4S and RFC3168 AQMs.</t>
       </section>
@@ -187,8 +195,14 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>Some of the options listed in this section may not be feasible in all networking equipment.</t>
 
       <section><name>Preferred Options</name>
+
+      <t>The options in this section preserve the ability of the bottleneck to CE-mark ECT(1) packets as well as ECT(0) packets. The result of these options is that hosts utilizing classic (RFC3168) ECN and hosts utilizing L4S ECN receive the benefit of ECN. Further with these options, the hosts that choose to use L4S ECN see the benefit of reduced latency and latency-variation compared to hosts that choose instead to use classic ECN.</t>
+
       <section><name>Upgrade AQMs to an L4S-aware AQM</name>
       <t>If the RFC3168 AQM implementation can be upgraded to enable support for L4S, either via <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/> or via an L4S-aware FQ implementation, this is the preferred approach to addressing potential unfairness, because it additionally enables all of the benefits of L4S.</t>
+
+      <t><xref target="I-D.ietf-tsvwg-l4s-arch" section="4.2"/> contains a description of the options available, including a discussion about L4S-aware FQ implementations.</t>
+
       </section>
 
       <section anchor="non-coupled-shallow"><name>Configure Non-Coupled Dual Queue with Shallow Target</name>
@@ -211,6 +225,9 @@ please see http://xml.resource.org/authoring/README.html. -->
           </li>
         </ul>
         <t>This option would allow L4S flows to achieve low latency, low loss and scalable throughput, but would sacrifice the more precise flow balance offered by <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>. This option would be expected to result in some reordering of previously CE marked packets sent by Classic ECN senders, which is a trait shared with <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>. As is discussed in <xref target="I-D.ietf-tsvwg-ecn-l4s-id"/>, this reordering would be either zero risk or very low risk.</t>
+
+        <t>If classification based on the ECN field isn't possible in the bottleneck, this option may still be useful if an external system can be configured to provide an alternative identifier that can be used to identify and classify traffic into Queue #1. For example, if at network ingress an edge router can apply a local-use DSCP to ECT(1) &amp; CE packets, the bottleneck can then utilize a DSCP classifier.  TODO: describe the use of other identifiers (tunnel, MPLS wrapper) </t>
+
       </section>
 
       <section><name>Approximate Fair Dropping</name>
@@ -227,8 +244,8 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 
     </section>
-    <section><name>Less Preferred Options</name>
-      <t>In the case that there is a concern about per-flow fairness between L4S flows and Classic flows in an RFC3168 FIFO bottleneck, and none of the remedies in the previous section can be implemented, the options listed in this section could be considered.</t>
+    <section><name>Non-Preferred Options</name>
+      <t>The options in this section come with a downside that they treat ECT(1) packets as NotECT, and thus don't provide the latency/loss benefit to flows marked ECT(1) (i.e. L4S flows). In the case that there is a strong concern about per-flow fairness between L4S flows and Classic flows in an RFC3168 FIFO bottleneck, and none of the remedies in the previous section can be implemented, the options listed in this section could be considered. These options are non-preferred because bottlenecks that implement them create a dilemma for operators of hosts, in that the application could see better performance if it uses classic (RFC3168) ECN rather than L4S ECN.</t>
 
       <section anchor="non-coupled-notECT"><name>Configure Non-Coupled Dual Queue Treating ECT(1) as NotECT</name>
         
@@ -248,7 +265,7 @@ please see http://xml.resource.org/authoring/README.html. -->
             </ul>
           </li>
         </ul>
-        <t>This option would not allow L4S flows to achieve low latency, low loss and scalable throughput in this bottleneck link. As a result it is the less preferred option.</t>
+        <t>This option could potentially be implemented using an identifier other than the ECN field, as discussed in <xref target="non-coupled-shallow"/>.</t>
       </section>
 
       <section><name>WRED with ECT(1) Differentation</name>
@@ -261,6 +278,7 @@ please see http://xml.resource.org/authoring/README.html. -->
             </ul>
           </li>
         </ul>
+        <t>This option could potentially be implemented using an identifier other than the ECN field, as discussed in <xref target="non-coupled-shallow"/>.</t>
       </section>
 
       <section><name>Configure AQM to treat ECT(1) as NotECT</name>
@@ -478,7 +496,12 @@ please see http://xml.resource.org/authoring/README.html. -->
           <title>Design and Evaluation of COBALT Queue Discipline</title>
           <seriesInfo name="IEEE International Symposium on Local and Metropolitan Area Networks" value="2019"/>
           <author initials="J." surname="Palmei"/>
-          <author initials="" surname="et al."/>
+          <author initials="S." surname="Gupta"/>
+          <author initials="P." surname="Imputato"/>
+          <author initials="J." surname="Morton"/>
+          <author initials="M." surname="Tahiliani"/>
+          <author initials="S." surname="Avallone"/>
+          <author initials="D." surname="Taht"/>
           <date year="2019"/>
         </front>
       </reference>

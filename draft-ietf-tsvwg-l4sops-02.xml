@@ -42,7 +42,7 @@ please see http://xml.resource.org/authoring/README.html. -->
    full title is longer than 39 characters -->
 
    <title abbrev="L4S Operational Guidance">Operational Guidance for Deployment of L4S in the Internet</title>
-    <seriesInfo name="Internet-Draft" value="draft-ietf-tsvwg-l4sops-01"/>
+    <seriesInfo name="Internet-Draft" value="draft-ietf-tsvwg-l4sops-02"/>
     <!-- add 'role="editor"' below for the editors if appropriate -->
 
    <!-- Another author who claims to be an editor -->

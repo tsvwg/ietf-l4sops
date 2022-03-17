@@ -108,7 +108,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 
     <section><name>Detection of Classic ECN Bottlenecks</name>
-      <t>The IETF encourages researchers, end system deployers and network operators to conduct experiments to identify to what degree RFC3168 bottlecks exist in networks. These types of measurement campaigns, even if each is conducted over a limited set of paths, could be useful to further understand the scope of any potential issues, to guide end system deployers on where to examine performance more closely (or possibly delay L4S deployment), and to help network operators identify nodes where remediation may be necessary to provide the best performance.</t>
+      <t>The IETF encourages researchers, end system deployers and network operators to conduct experiments to identify to what degree RFC3168 bottlenecks exist in networks. These types of measurement campaigns, even if each is conducted over a limited set of paths, could be useful to further understand the scope of any potential issues, to guide end system deployers on where to examine performance more closely (or possibly delay L4S deployment), and to help network operators identify nodes where remediation may be necessary to provide the best performance.</t>
 
       <section anchor="studies"><name>Recent Studies</name>
       <t>A small number of recent studies have attempted to gauge the level of RFC3168 AQM deployment in the internet.</t>
@@ -144,7 +144,7 @@ please see http://xml.resource.org/authoring/README.html. -->
         <section><name>General purpose servers (e.g. web servers)</name>
 
           <ul>
-            <li>Out-of-band active testing could be performed by the server. For example, a javascript application could run simultaneous downloads (i.e. with and without L4S) during page reading time in order to survey for presence of RFC3168 FIFO bottlenecks on paths to users (e.g. as described in Section 4 of <xref target="Briscoe"/>). </li>
+            <li>Out-of-band active testing could be performed by the server. For example, a JavaScript application could run simultaneous downloads (i.e. with and without L4S) during page reading time in order to survey for presence of RFC3168 FIFO bottlenecks on paths to users (e.g. as described in Section 4 of <xref target="Briscoe"/>). </li>
             <li>In-band testing could be built in to the transport protocol implementation at the sender in order to perform detection (see Section 5 of <xref target="Briscoe"/>, though note that this mechanism does not differentiate between FIFO and FQ).</li>
             <li>Depending on the details of the L4S congestion control implementation, taking action based on the detection of RFC3168 FIFO bottlenecks may not be needed for short transactional transfers that are unlikely to achieve the steady-state conditions where unfairness is likely to occur.</li>
             <li>For longer file transfers, it may be possible to fall-back to Classic behavior in real-time (i.e. when doing in-band testing), or to cache those destinations where RFC3168 has been detected, and disable L4S for subsequent long file transfers to those destinations.</li>
@@ -179,7 +179,7 @@ please see http://xml.resource.org/authoring/README.html. -->
       </section>
 
       <section><name>Other hosts</name>
-        <t>Hosts that are deployed in locations that serve a wide variety of networks face a more difficult prospect in terms of handling the potential presence of RFC3168 FIFO bottlenecks. Nonetheless, the steps listed in the ealier section (based on server type) can be taken to minimize the risk of unfairness.</t>
+        <t>Hosts that are deployed in locations that serve a wide variety of networks face a more difficult prospect in terms of handling the potential presence of RFC3168 FIFO bottlenecks. Nonetheless, the steps listed in the earlier section (based on server type) can be taken to minimize the risk of unfairness.</t>
 
         <t>It is recommended that operators of such hosts consider carefully whether these hosts are appropriate for early experimentation with L4S.</t>
 
@@ -226,7 +226,7 @@ please see http://xml.resource.org/authoring/README.html. -->
         </ul>
         <t>This option would allow L4S flows to achieve low latency, low loss and scalable throughput, but would sacrifice the more precise flow balance offered by <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>. This option would be expected to result in some reordering of previously CE marked packets sent by Classic ECN senders, which is a trait shared with <xref target="I-D.ietf-tsvwg-aqm-dualq-coupled"/>. As is discussed in <xref target="I-D.ietf-tsvwg-ecn-l4s-id"/>, this reordering would be either zero risk or very low risk.</t>
 
-        <t>If classification based on the ECN field isn't possible in the bottleneck, this option may still be useful if an external system can be configured to reflect the ECN codepoint to another field that could then be used as an alternative identifier to classify traffic into Queue #1. For example, if at network ingress an edge router can apply a local-use DSCP to ECT(1) &amp; CE packets, the bottleneck can then utilize a DSCP classifier. Similarly, in MPLS networks, ECT(1) &amp; CE packets could use a different EXP value [RFC5129] than classic packets. More generally, any tunnelling protocol can be used to proxy the ECN value of the encapsulated packet to its outer header, enabling bottlenecks to classify packets based on their input virtual interface.</t>
+        <t>If classification based on the ECN field isn't possible in the bottleneck, this option may still be useful if an external system can be configured to reflect the ECN codepoint to another field that could then be used as an alternative identifier to classify traffic into Queue #1. For example, if at network ingress an edge router can apply a local-use DSCP to ECT(1) &amp; CE packets, the bottleneck can then utilize a DSCP classifier. Similarly, in MPLS networks, ECT(1) &amp; CE packets could use a different EXP value [RFC5129] than classic packets. More generally, any tunneling protocol can be used to proxy the ECN value of the encapsulated packet to its outer header, enabling bottlenecks to classify packets based on their input virtual interface.</t>
       </section>
 
       <section><name>Approximate Fair Dropping</name>
@@ -267,7 +267,7 @@ please see http://xml.resource.org/authoring/README.html. -->
         <t>This option could potentially be implemented using an identifier other than the ECN field, as discussed in <xref target="non-coupled-shallow"/>.</t>
       </section>
 
-      <section><name>WRED with ECT(1) Differentation</name>
+      <section><name>WRED with ECT(1) Differentiation</name>
         <t>This configuration is similar to the option described in <xref target="non-coupled-notECT"/>, but uses a single queue with WRED functionality.</t>
         <ul>
           <li><t>Configure the queue with two WRED classes</t>
@@ -297,7 +297,7 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>If serious issues are detected, where the presence of L4S flows is determined to be the likely cause, and none of the above options are implementable, the options in this section can be considered as a last resort.  These options are not recommended.</t>
 
       <section><name>Disable RFC3168 Support</name>
-        <t>Disabling an <xref target="RFC3168"/> AQM from CE marking both ECT(0) traffic and ECT(1) traffic eliminates the unfairness issue. A downside to this approach is that classic senders will no longer get the benefits of Explict Congestion Notification at this bottleneck link either. This alternative is only mentioned in case there is no other way to reconfigure an RFC3168 AQM.</t>
+        <t>Disabling an <xref target="RFC3168"/> AQM from CE marking both ECT(0) traffic and ECT(1) traffic eliminates the unfairness issue. A downside to this approach is that classic senders will no longer get the benefits of Explicit Congestion Notification at this bottleneck link either. This alternative is only mentioned in case there is no other way to reconfigure an RFC3168 AQM.</t>
       </section>
 
       <section><name>Re-mark ECT(1) to NotECT Prior to AQM</name>

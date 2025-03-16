@@ -103,7 +103,7 @@ please see http://xml.resource.org/authoring/README.html. -->
     <section anchor="FQ"><name>Flow Queuing Systems</name>
      <t>As noted above, the concern around RFC3168 coexistence mainly concerns single-queue systems where classic and L4S traffic are mixed.  In a flow-queuing system, when flow isolation is successful, the FQ scheduling of such queues isolates classic congestion control traffic from L4S traffic, and thus eliminates the potential for unfairness. But, these systems are known to sometimes result in imperfect isolation, either due to hash collisions (see <xref target="RFC8290" section="5.3"/>), because of VPN tunneling (see <xref target="RFC8290" section="6.2"/>), or due to deliberate configuration (see <xref target="per-user"/>).</t> 
 
-     <t>It is believed that the majority of FQ deployments in bottleneck links today (e.g., Cake <xref target="Hoiland-Jorgensen"/>) employ hashing algorithms that virtually eliminate the possibility of collisions, making this a non-issue for those deployments.  But, VPN tunnels remain an issue for FQ deployments, and the introduction of L4S traffic raises the possibility that tunnels containing mixed classic and L4S traffic would exist, in which case FQ implementations that have not been updated to be L4S-aware could exhibit similar unfairness properties as single queue AQMs.  <xref target="FQrecs"/> discusses some remedies that can be implemented by operators of FQ equipment in order to minimize this risk. Additionally, end-host mitigations such as separating L4S and Classic traffic into distinct VPN tunnels could be employed.</t>
+     <t>It is believed that the majority of FQ deployments in bottlenecks today (e.g., Cake <xref target="Hoiland-Jorgensen"/>) employ hashing algorithms that virtually eliminate the possibility of collisions, making this a non-issue for those deployments.  But, VPN tunnels remain an issue for FQ deployments, and the introduction of L4S traffic raises the possibility that tunnels containing mixed classic and L4S traffic would exist, in which case FQ implementations that have not been updated to be L4S-aware could exhibit similar unfairness properties as single queue AQMs.  <xref target="FQrecs"/> discusses some remedies that can be implemented by operators of FQ equipment in order to minimize this risk. Additionally, end-host mitigations such as separating L4S and Classic traffic into distinct VPN tunnels could be employed.</t>
     </section>
 
 
@@ -126,7 +126,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       <section><name>Future Experiments</name>
 
-      <t>The design of future experiments should consider not only the detection of RFC3168 ECN marking, but also the determination whether the bottleneck AQM is a single queue (FIFO) or a flow-queuing (FQ) system. It is believed that the vast majority, if not all, of the RFC3168 AQMs in use at bottleneck links are flow-queuing systems (e.g., fq_codel <xref target="RFC8290"/> or COBALT <xref target="Palmei"/>).  </t>
+      <t>The design of future experiments should consider not only the detection of RFC3168 ECN marking, but also the determination whether the bottleneck AQM is a single queue (FIFO) or a flow-queuing (FQ) system. It is believed that the vast majority, if not all, of the RFC3168 AQMs in use at bottlenecks are flow-queuing systems (e.g., fq_codel <xref target="RFC8290"/> or COBALT <xref target="Palmei"/>).  </t>
       
       <t><xref target="Briscoe"/> contains recommendations on some of the mechanisms that can be used to detect RFC3168 bottlenecks. In particular, Section 4 of <xref target="Briscoe"/> outlines an approach for out-band-detection of RFC3168 bottlenecks.</t>
     </section>
@@ -192,7 +192,7 @@ please see http://xml.resource.org/authoring/README.html. -->
     </section>
 
     <section><name>Operator of a Network Employing RFC3168 FIFO Bottlenecks</name>
-      <t>While it is more preferable for L4S senders to detect problems themselves, a network operator who has deployed equipment in a likely bottleneck link location (i.e. a link that is expected to frequently be fully saturated) that is configured with a legacy <xref target="RFC3168"/> FIFO AQM can take certain steps in order to improve rate fairness between classic traffic and L4S traffic, and thus enable L4S to be deployed in a greater number of paths.</t>
+      <t>While it is more preferable for L4S senders to detect problems themselves, a network operator who has deployed equipment in a likely bottleneck location (i.e. a link that is expected to frequently be fully saturated) that is configured with a legacy <xref target="RFC3168"/> FIFO AQM can take certain steps in order to improve rate fairness between classic traffic and L4S traffic, and thus enable L4S to be deployed in a greater number of paths.</t>
       <t>Some of the options listed in this section may not be feasible in all networking equipment.</t>
 
       <section><name>Preferred Options</name>
@@ -298,7 +298,7 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>If serious issues are detected, where the presence of L4S flows is determined to be the likely cause, and none of the above options are implementable, the options in this section can be considered as a last resort.  These options are not recommended.</t>
 
       <section><name>Disable RFC3168 Support</name>
-        <t>Disabling an <xref target="RFC3168"/> AQM from CE marking both ECT(0) traffic and ECT(1) traffic eliminates the unfairness issue. A downside to this approach is that classic senders will no longer get the benefits of Explicit Congestion Notification at this bottleneck link either. This alternative is only mentioned in case there is no other way to reconfigure an RFC3168 AQM.</t>
+        <t>Disabling an <xref target="RFC3168"/> AQM from CE marking both ECT(0) traffic and ECT(1) traffic eliminates the unfairness issue. A downside to this approach is that classic senders will no longer get the benefits of Explicit Congestion Notification at this bottleneck either. This alternative is only mentioned in case there is no other way to reconfigure an RFC3168 AQM.</t>
       </section>
 
       <section><name>Re-mark ECT(1) to NotECT Prior to AQM</name>

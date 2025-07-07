@@ -313,7 +313,7 @@ please see http://xml.resource.org/authoring/README.html. -->
       <t>A network operator who has deployed flow-queuing systems that implement RFC3168 (e.g., fq_codel or CAKE using default hashing) at network bottlenecks will likely see fewer potential issues when L4S traffic is present on their network as compared to operators of RFC3168 FIFOs. As discussed in <xref target="FQ"/>, the flow queuing mechanism will typically isolate L4S flows and Classic flows into separate queues, and the scheduler will then enforce per-flow fairness. As a result, the potential fairness issues between Classic and L4S traffic that can occur in FIFOs will typically not occur in FQ systems.  That said, FQ systems commonly treat a tunneled traffic aggregate as a single flow, and thus a tunneled traffic aggregate that contains a mix of Classic and L4S traffic will utilize a single queue, and the traffic within the tunnel could experience the same fairness issue as has been described for RFC3168 FIFOs. This unfairness is compounded by the fact that the FQ scheduler will already be causing unfairness to flows within the tunnel relative to flows that are not tunneled (each of which gets the same bandwidth share as does the tunnel).  Additionally, many of the deployed RFC3168 FQ systems currently implement an AQM algorithm (either CoDel or COBALT) that is designed for Classic traffic and reacts sluggishly to L4S (or unresponsive) traffic, with the result being that L4S senders could in some cases see worse latency performance than Classic senders.</t>
 
       <t>While the potential unfairness result is arguably less impactful in the case of RFC3168 FQ bottlenecks, it is believed that RFC3168 FQ bottlenecks are currently more common than RFC3168 FIFO bottlenecks. The most common deployments of RFC3168 FQ bottlenecks are in home routers running OpenWRT firmware where the user has turned the feature on.</t>
-      <t>As is the case with RFC3168 FIFOs, the preferred remedy for a network operator that wishes to enable the best performance possible with regard to L4S, is for the network operator to update RFC3168 FQ bottlenecks to be L4S-aware. In cases where that is infeasible, several of the remedies described in the previous section can be used to reduce or eliminate these issues.</t>
+      <t>As is the case with RFC3168 FIFOs, the preferred remedy for a network operator that wishes to enable the best performance possible with regard to L4S, is for the network operator to update RFC3168 FQ bottlenecks to be L4S-aware (in the case of linux bottlenecks, see <xref target="fq_linux"/>). In cases where that is infeasible, several of the remedies described in the previous section can be used to reduce or eliminate these issues.</t>
       <ul>
         <li>Configure AQM to treat ECT(1) as NotECT </li>
         <li>Disable RFC3168 Support</li>
@@ -343,7 +343,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 
     <section anchor="Contributors"><name>Contributors</name>
-      <t>Thanks to Bob Briscoe, Jake Holland, Koen De Schepper, Olivier Tilmans, Tom Henderson, Asad Ahmed, Gorry Fairhurst, Sebastian Moeller, Pete Heist, and members of the TSVWG mailing list for their contributions to this document. </t>
+      <t>Thanks to Bob Briscoe, Jake Holland, Koen De Schepper, Olivier Tilmans, Tom Henderson, Asad Ahmed, Gorry Fairhurst, Sebastian Moeller, Pete Heist, Ingemar Johansson, and members of the TSVWG mailing list for their contributions to this document. </t>
     </section>
 
     <section anchor="IANA"><name>IANA Considerations</name>
@@ -527,6 +527,18 @@ please see http://xml.resource.org/authoring/README.html. -->
           <date year="2003" month="Jan"/>
         </front>
       </reference>
+
+      <reference anchor="tc-fq_codel" target="https://www.man7.org/linux/man-pages/man8/tc-fq_codel.8.html">
+        <front>
+          <title>tc-fq_codel(8) — Linux manual page</title>
+          <author>
+            <organization>The Linux Foundation</organization>
+          </author>
+
+          <date>Accessed 7 July 2025</date>
+        </front>
+      </reference>
+
 <!--
       <reference anchor="AFD-NFT" target="http://web.stanford.edu/~balaji/papers/03approximatefair.pdf">
         <front>
@@ -542,6 +554,15 @@ please see http://xml.resource.org/authoring/README.html. -->
 -->
 
     </references>
+
+    
+    <section anchor="fq_linux">
+      <name>Support for L4S in Linux fq_codel</name>
+      <t>As of kernel version 5.16, the linux fq_codel qdisc <xref target="tc-fq_codel"/> supports L4S via the ce_threshold and ce_threshold_selector parameters. Setting ce_threshold to an appropriate value (e.g. "1ms"), and setting the ce_threshold_selector to match ECT1 marked packets (i.e. "0x1/0x3") enables support for L4S.</t>
+    </section>
+
+
+
   </back>
 </rfc>
 <!-- vim: ft=xml tabstop=2 expandtab:

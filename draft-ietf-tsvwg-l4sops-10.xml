@@ -206,6 +206,97 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       </section>
 
+
+      <section><name>Configure Non-Coupled Dual Queue with a Two-Rate, Three-Color Marker</name>
+
+        <t>Equipment supporting <xref target="RFC2698"/> can use the Static Rate Management (SRM) solution for L4S flows, utilizing a standard policer with a Two-Rate, Three-Color Marker (TCM). 
+        It is an alternative to AQM-based solutions, suitable for scenarios where a "safe" and fixed rate can be defined on a fixed-rate link.</t>
+
+        <t>This solution is applicable across a wide range of link speeds, from Mbps to Tbps, but specifically interesting for very high-speed and aggregated networks with limited packet processing capabilities. 
+        The only packet processing required is for setting the CE marking bit, or a lower layer bit or codepoint that can later be moved into the IP.ECN field by edge nodes.</t>
+
+
+        <t>Operation:</t>
+        <ul>
+        <li><t>Dual Queue Configuration: Two parallel queues are configured for the same traffic class:</t>
+          <ul>
+          <li>An L4S queue for ECT(1) and CE packets.</li>
+          <li>A Classic queue for ECT(0) and NotECT packets.</li>
+          </ul>
+        </li>
+        <li>Priority and Policer Application: The L4S queue is given priority over the Classic queue. 
+        The priority can be strict or at a high enough weight to prevent latency for the mostly empty L4S queue. 
+        A Two-Rate, Three-Color Marker (TCM) policer is applied to the L4S queue.</li>
+        <li><t>Marking and Dropping:</t>
+          <ul>
+          <li>The policer marks packets as CE if their rate exceeds the configured Committed Information Rate (CIR) (yellow state).</li>
+          <li>Packets are dropped if their rate exceeds the Peak Information Rate (PIR) (red state), which serves as a protection to prevent misuse by non-responsive traffic and protect Classic flows.</li>
+          </ul>
+        </li>
+        </ul>
+        
+
+        <t>Advantages:</t>
+        <ul>
+        <li>No Queuing Delay: This approach avoids generating additional queuing latency for L4S flows, as it does not rely on AQM thresholds that introduces delay.</li>
+        <li>Predictable Performance: Provides predictable performance for L4S traffic within the defined rate limit.</li>
+        <li>Can support a larger network segment: A single strategic bottleneck or edge node bottlenecks can make sure that other parts of a network with higher capacities only need the priority queue for L4S, without the need for additional marking policers.</li>
+        </ul>
+
+
+        <t>Disadvantages:</t>
+        <ul> 
+          <li>Rate Limitation: The rate for L4S flows is explicitly limited by the policer and cannot utilize the full link capacity. 
+          This is less of a concern on large aggregation links or where sufficient bandwidth is provisioned.</li>
+          <li>Fixed Rate Requirement: This solution is only viable where a "safe" (non-blocking) and fixed rate can be reliably defined for the link or network segment. 
+          For links with large, unknown capacity variations, other solutions are required (e.g. AQM-based as in <xref target="non-coupled-shallow"/>).</li>
+        </ul>
+
+
+        <t>trTCM configuration:</t>
+        <ul>
+          <li>Burst Time: A burst time around 4 ms is generally sufficient, with a maximum of 10 ms and possibly lower than 1 ms, depending on the proximity to bursty network technologies like Wi-Fi or 4G/5G that require the higher range, and the level of aggregation that can allow very small burst times. 
+          If a burst size is needed for configuration, the burst_size [Bytes] = information_rate [Bytes/s] * burst_time [s] should be used to convert the time in a size.</li>
+          <li>PIR/CIR ratio: The marking CIR and dropping PIR rates must be sufficiently separated. 
+          To support high levels of congestion and ensure L4S flows can converge, the ratio between the dropping PIR and the marking CIR should be at least a factor of 2 if a small amounts of flows are expected to share all capacity. 
+          This allows for a significant portion of packets to be CE-marked before drops occur and to support slow start without loss (slow start doubles the rate every RTT). 
+          This ratio can be reduced for more aggregated links with higher capacity and more active users required to reach the CIR capacity.</li>
+          <li>PIR dimensioning: To prevent latency and classic throughput starvation, the dropping PIR rate should be configured to occur before any schedulers or shapers block due to oversubscription. 
+          Typically, 50% to 30% of the capacity can be left for Classic traffic when L4S is under full congestion (just before dropping starts).</li>
+          <li><t>CIR and excess marking: The CIR marking policer acts as an "excess" marker; for example, a 10 Gbps CIR will mark 1% of packets CE if 10.1 Gbps aggregate rate passes, and 50% if 20 Gbps passes. 
+          This is different for the PIR rate that drops the excesses. 
+          For Prague flows, the rule of thumb for the rate per flow (Rpf) depends on the marking probability p as follows: </t>
+          <sourcecode type="math">
+            <![CDATA[
+              Rpf = (1/p) - 1 [Mbps]. 
+            ]]>
+          </sourcecode>   
+          <t>For the previous examples, the rate per flow would be 99Mbps for 1% (p=0.01) and 1Mbps for 50% (p=0.5). 
+          To reach 50% on a 10Gbps CIR rate, 20Gbps/1Mbps = 20000 greedy flows need to be active, similarly 10.1Gbps/99Mbps = 102 flows are capacity seeking with the 1% marking applied.</t></li>
+          <li><t>CIR dimensioning: When the rate per flow is high, the excess marking rate will be low, and the CIR can follow the PIR/CIR ratio. 
+          For more constraint links, the CIR can be adjusted based on the intended aggregate L4S rate (Rate_L4S). 
+          The adjusted CIR will be determined by the expected number of active flows (N) or the expected Rate per flow (Rpf = Rate_L4S/N) as follows:</t>
+          <sourcecode type="math">
+            <![CDATA[
+              CIR = Rate_L4S / ( 1 + 1/Rpf )
+            ]]>
+          </sourcecode>
+          </li>
+
+          <li><t>Max Supported Rate per Flow Calculation: The final ratio between the dropping rate (PIR) and the marking rate (CIR) directly impacts the lower bounded "Rate per Flow Max" (Rpfm) at which loss is expected. 
+          If congestion demands higher marking probabilities, to attempt to lower the Rpf, the excess marked packets will also get dropped. 
+          The relationship is given by:</t>
+          <sourcecode type="math">
+            <![CDATA[
+            Rpfm = 1 / ( PIR/CIR - 1 )
+            ]]>
+          </sourcecode>
+          </li>
+        </ul>
+      </section>
+
+
+
       <section anchor="non-coupled-shallow"><name>Configure Non-Coupled Dual Queue with Shallow Target</name>
         <t>Equipment supporting <xref target="RFC3168"/> may be configurable to enable two parallel queues for the same traffic class, with classification done based on the ECN field.</t>
         
@@ -358,6 +449,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
   <back>
     <references><name>Normative References</name>
+      <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2698.xml"/>
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3168.xml"/>
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8311.xml"/>
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9330.xml"/>

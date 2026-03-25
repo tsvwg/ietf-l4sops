@@ -209,10 +209,10 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       <section><name>Configure Non-Coupled Dual Queue with a Two-Rate, Three-Color Marker</name>
 
-        <t>Equipment supporting <xref target="RFC2698"/> can use the Static Rate Management (SRM) solution for L4S flows, utilizing a standard policer with a Two-Rate, Three-Color Marker (TCM). 
+        <t>Equipment supporting <xref target="RFC2698"/> can use a Static Rate Management (SRM) solution for L4S flows, utilizing a standard policer with a Two-Rate, Three-Color Marker (TCM). 
         It is an alternative to AQM-based solutions, suitable for scenarios where a "safe" and fixed rate can be defined on a fixed-rate link.</t>
 
-        <t>This solution is applicable across a wide range of link speeds, from Mbps to Tbps, but specifically interesting for very high-speed and aggregated networks with limited packet processing capabilities. 
+        <t>This solution is applicable across a wide range of link speeds, from Mbps to Tbps, but is specifically interesting for very high-speed and aggregated networks with limited packet processing capabilities. 
         The only packet processing required is for setting the CE marking bit, or a lower layer bit or codepoint that can later be moved into the IP.ECN field by edge nodes.</t>
 
 
@@ -255,43 +255,38 @@ please see http://xml.resource.org/authoring/README.html. -->
 
         <t>trTCM configuration:</t>
         <ul>
-          <li>Burst Time: A burst time around 4 ms is generally sufficient, with a maximum of 10 ms and possibly lower than 1 ms, depending on the proximity to bursty network technologies like Wi-Fi or 4G/5G that require the higher range, and the level of aggregation that can allow very small burst times. 
-          If a burst size is needed for configuration, the burst_size [Bytes] = information_rate [Bytes/s] * burst_time [s] should be used to convert the time in a size.</li>
-          <li>PIR/CIR ratio: The marking CIR and dropping PIR rates must be sufficiently separated. 
-          To support high levels of congestion and ensure L4S flows can converge, the ratio between the dropping PIR and the marking CIR should be at least a factor of 2 if a small amounts of flows are expected to share all capacity. 
-          This allows for a significant portion of packets to be CE-marked before drops occur and to support slow start without loss (slow start doubles the rate every RTT). 
-          This ratio can be reduced for more aggregated links with higher capacity and more active users required to reach the CIR capacity.</li>
+          <li>Burst Time: A burst time between 1ms and 10ms is generally sufficient for both the PIR and CIR meters, and a default of 4 ms is recommended.  
+          Links that carry a large aggregate of flows could use a lower-than-default value for burst time, while links that are immediately following a bursty network technology like Wi-Fi or 4G/5G might require a higher-than-default value. 
+          If a burst size is needed for configuration, the burst_size [Bytes] = information_rate [Bytes/s] * burst_time [s] should be used to convert the time to a size.</li>
+
           <li>PIR dimensioning: To prevent latency and classic throughput starvation, the dropping PIR rate should be configured to occur before any schedulers or shapers block due to oversubscription. 
-          Typically, 50% to 30% of the capacity can be left for Classic traffic when L4S is under full congestion (just before dropping starts).</li>
-          <li><t>CIR and excess marking: The CIR marking policer acts as an "excess" marker; for example, a 10 Gbps CIR will mark 1% of packets CE if 10.1 Gbps aggregate rate passes, and 50% if 20 Gbps passes. 
-          This is different for the PIR rate that drops the excesses. 
-          For Prague flows, the rule of thumb for the rate per flow (Rpf) depends on the marking probability p as follows: </t>
+          Typically, 30% to 50% of the capacity can be reserved for Classic traffic when L4S is under full congestion (just before dropping starts), and so a PIR rate of 50% to 70% of the total capacity is recommended.</li>
+
+          <li><t>CIR and excess marking: The CIR marking policer acts as an "excess" marker; for example, a 10 Gbps CIR will mark 0.99% of packets CE if 10.1 Gbps aggregate rate passes, and 50% if 20 Gbps passes. 
+          Thus, the marking probability p is given by p = (aggregate_rate - CIR) / aggregate_rate. </t></li>
+
+          <li><t>PIR/CIR ratio: The marking CIR and dropping PIR rates must be sufficiently separated.
+          To allow a large number of flows to share the capacity, and ensure L4S flows can converge, the ratio between the dropping PIR and the marking CIR should be at least a factor of 2.
+          This allows for a significant portion of packets to be CE-marked before drops occur and supports slow start without loss (slow start doubles the rate every RTT).</t>
+          
+          <t>For steady-state Prague flows, the rule of thumb for the rate per flow (Rpf) depends on the marking probability p as follows: </t>
           <sourcecode type="math">
             <![CDATA[
-              Rpf = (1/p) - 1 [Mbps]. 
+            Rpf = (1/p) - 1 [Mbps]. 
             ]]>
           </sourcecode>   
-          <t>For the previous examples, the rate per flow would be 99Mbps for 1% (p=0.01) and 1Mbps for 50% (p=0.5). 
-          To reach 50% on a 10Gbps CIR rate, 20Gbps/1Mbps = 20000 greedy flows need to be active, similarly 10.1Gbps/99Mbps = 102 flows are capacity seeking with the 1% marking applied.</t></li>
-          <li><t>CIR dimensioning: When the rate per flow is high, the excess marking rate will be low, and the CIR can follow the PIR/CIR ratio. 
-          For more constraint links, the CIR can be adjusted based on the intended aggregate L4S rate (Rate_L4S). 
-          The adjusted CIR will be determined by the expected number of active flows (N) or the expected Rate per flow (Rpf = Rate_L4S/N) as follows:</t>
+          <t>For the previous examples, the rate per flow with 0.99% marking (p=0.0099) would be 100Mbps and with 50% marking (p=0.5) would be 1Mbps. 
+          Since 0.99% marking on a 10Gbps CIR rate would require an aggregate arrival rate of 10.1Gbps, this implies that 10.1Gbps/100Mbps = 101 capacity-seeking flows are active.
+          Similarly, to reach a 50% marking rate, 20Gbps/1Mbps = 20000 capacity-seeking flows would need to be active.  
+          When a single L4S flow is present, its rate will be slightly above CIR, and as the number of flows increases, the aggregate rate climbs above the CIR, until the point where the aggregate rate reaches the PIR, at which point dropping begins.
+          It can be shown that at the point where the aggregate rate (N*Rpf) is equal to the PIR, the number of flows (N) is given by:</t>
           <sourcecode type="math">
             <![CDATA[
-              CIR = Rate_L4S / ( 1 + 1/Rpf )
+            N = PIR * ( PIR/CIR - 1 )
             ]]>
           </sourcecode>
-          </li>
-
-          <li><t>Max Supported Rate per Flow Calculation: The final ratio between the dropping rate (PIR) and the marking rate (CIR) directly impacts the lower bounded "Rate per Flow Max" (Rpfm) at which loss is expected. 
-          If congestion demands higher marking probabilities, to attempt to lower the Rpf, the excess marked packets will also get dropped. 
-          The relationship is given by:</t>
-          <sourcecode type="math">
-            <![CDATA[
-            Rpfm = 1 / ( PIR/CIR - 1 )
-            ]]>
-          </sourcecode>
-          </li>
+          <t>where PIR and CIR are in Mbps. If more than this number of capacity-seeking flows are active, the aggregate rate will exceed the PIR, and drops will begin.</t></li>
+          <li><t>CIR dimensioning: The recommended PIR/CIR ratio of 2 is therefore sufficient when the number of flows is not expected to exceed the PIR expressed in Mbps units (e.g 1000 flows for a 1 Gbps PIR). The PIR/CIR ratio can be reduced below the recommended factor of 2 for links with higher capacity or less aggregation, and may need to be greater than 2 for constrained links that carry a large number of flows.</t></li>
         </ul>
       </section>
 

@@ -206,10 +206,25 @@ please see http://xml.resource.org/authoring/README.html. -->
 
       </section>
 
+      <section><name>Configure Non-Coupled Dual Queue</name>
+
+        <t>Existing equipment may be capable of being configured to support a dual-queue arrangement that provides limited support for L4S. 
+        In such an arrangement, classification is done based on the ECN field in order to provide isolation between L4S and Classic traffic (as in <xref target="RFC9332"/>), 
+        while capacity sharing between L4S and Classic traffic is handled using an existing mechanism available in the equipment, rather than the Coupled-AQM mechanism defined in <xref target="RFC9332"/>.</t>
+
+        <t>This option would allow L4S flows to achieve low latency, low loss and scalable throughput, but would sacrifice the more precise flow balance offered by <xref target="RFC9332"/>. 
+        This option would be expected to result in some reordering of previously CE marked packets sent by Classic ECN senders, which is a trait shared with <xref target="RFC9332"/>. 
+        As is discussed in <xref target="RFC9331"/>, this reordering would be either zero risk or very low risk.</t>
+
+        <t>If classification based on the ECN field isn't possible in the bottleneck, this option may still be useful if an external system can be configured to reflect the ECN codepoint to another field that could then be used as an alternative identifier to classify traffic at the bottleneck. 
+        For example, if at network ingress an edge router can apply a local-use DSCP to ECT(1) &amp; CE packets, the bottleneck can then utilize a DSCP classifier. 
+        Similarly, in MPLS networks, ECT(1) &amp; CE packets could use a different EXP value <xref target="RFC5129"/> than classic packets. 
+        More generally, any tunneling protocol can be used to proxy the ECN value of the encapsulated packet to its outer header, enabling bottlenecks to classify packets based on their input virtual interface.</t>
 
       <section><name>Configure Non-Coupled Dual Queue with a Two-Rate, Three-Color Marker</name>
 
-        <t>Equipment supporting <xref target="RFC2698"/> can use a Static Rate Management (SRM) solution for L4S flows, utilizing a standard policer with a Two-Rate, Three-Color Marker (TCM). 
+        <t>Equipment supporting <xref target="RFC2698"/> can use a Static Rate Management (SRM) solution for L4S flows, as defined in <xref target="I-D.draft-deschepper-tsvwg-srm"/>. 
+        This approach utilizes a standard policer with a Two-Rate, Three-Color Marker (TCM). 
         It is an alternative to AQM-based solutions, suitable for scenarios where a "safe" and fixed rate can be defined on a fixed-rate link.</t>
 
         <t>This solution is applicable across a wide range of link speeds, from Mbps to Tbps, but is specifically interesting for very high-speed and aggregated networks with limited packet processing capabilities. 
@@ -252,42 +267,6 @@ please see http://xml.resource.org/authoring/README.html. -->
           For links with large, unknown capacity variations, other solutions are required (e.g. AQM-based as in <xref target="non-coupled-shallow"/>).</li>
         </ul>
 
-
-        <t>trTCM configuration:</t>
-        <ul>
-          <li>Burst Time: A burst time between 1ms and 10ms is generally sufficient for both the PIR and CIR meters, and a default of 4 ms is recommended.  
-          Links that carry a large aggregate of flows could use a lower-than-default value for burst time, while links that are immediately following a bursty network technology like Wi-Fi or 4G/5G might require a higher-than-default value. 
-          If a burst size is needed for configuration, the burst_size [Bytes] = information_rate [Bytes/s] * burst_time [s] should be used to convert the time to a size.</li>
-
-          <li>PIR dimensioning: To prevent latency and classic throughput starvation, the dropping PIR rate should be configured to occur before any schedulers or shapers block due to oversubscription. 
-          Typically, 30% to 50% of the capacity can be reserved for Classic traffic when L4S is under full congestion (just before dropping starts), and so a PIR rate of 50% to 70% of the total capacity is recommended.</li>
-
-          <li><t>CIR and excess marking: The CIR marking policer acts as an "excess" marker; for example, a 10 Gbps CIR will mark 0.99% of packets CE if 10.1 Gbps aggregate rate passes, and 50% if 20 Gbps passes. 
-          Thus, the marking probability p is given by p = (aggregate_rate - CIR) / aggregate_rate. </t></li>
-
-          <li><t>PIR/CIR ratio: The marking CIR and dropping PIR rates must be sufficiently separated.
-          To allow a large number of flows to share the capacity, and ensure L4S flows can converge, the ratio between the dropping PIR and the marking CIR should be at least a factor of 2.
-          This allows for a significant portion of packets to be CE-marked before drops occur and supports slow start without loss (slow start doubles the rate every RTT).</t>
-          
-          <t>For steady-state Prague flows, the rule of thumb for the rate per flow (Rpf) depends on the marking probability p as follows: </t>
-          <sourcecode type="math">
-            <![CDATA[
-            Rpf = (1/p) - 1 [Mbps]. 
-            ]]>
-          </sourcecode>   
-          <t>For the previous examples, the rate per flow with 0.99% marking (p=0.0099) would be 100Mbps and with 50% marking (p=0.5) would be 1Mbps. 
-          Since 0.99% marking on a 10Gbps CIR rate would require an aggregate arrival rate of 10.1Gbps, this implies that 10.1Gbps/100Mbps = 101 capacity-seeking flows are active.
-          Similarly, to reach a 50% marking rate, 20Gbps/1Mbps = 20000 capacity-seeking flows would need to be active.  
-          When a single L4S flow is present, its rate will be slightly above CIR, and as the number of flows increases, the aggregate rate climbs above the CIR, until the point where the aggregate rate reaches the PIR, at which point dropping begins.
-          It can be shown that at the point where the aggregate rate (N*Rpf) is equal to the PIR, the number of flows (N) is given by:</t>
-          <sourcecode type="math">
-            <![CDATA[
-            N = PIR * ( PIR/CIR - 1 )
-            ]]>
-          </sourcecode>
-          <t>where PIR and CIR are in Mbps. If more than this number of capacity-seeking flows are active, the aggregate rate will exceed the PIR, and drops will begin.</t></li>
-          <li><t>CIR dimensioning: The recommended PIR/CIR ratio of 2 is therefore sufficient when the number of flows is not expected to exceed the PIR expressed in Mbps units (e.g 1000 flows for a 1 Gbps PIR). The PIR/CIR ratio can be reduced below the recommended factor of 2 for links with higher capacity or less aggregation, and may need to be greater than 2 for constrained links that carry a large number of flows.</t></li>
-        </ul>
       </section>
 
 
@@ -299,8 +278,8 @@ please see http://xml.resource.org/authoring/README.html. -->
           <li>
             <t>Configure 2 queues, both with ECN; 50:50 WRR scheduler </t>
             <ul>
-              <li>Queue #1: ECT(1) &amp; CE packets - Shallow immediate AQM target </li>
-              <li>Queue #2: ECT(0) &amp; NotECT packets - Classic AQM target </li>
+              <li>L4S queue: ECT(1) and CE packets - Shallow immediate AQM target </li>
+              <li>Classic queue: ECT(0) and NotECT packets - Classic AQM target </li>
             </ul>
           </li>
           <li>
@@ -311,9 +290,7 @@ please see http://xml.resource.org/authoring/README.html. -->
             </ul>
           </li>
         </ul>
-        <t>This option would allow L4S flows to achieve low latency, low loss and scalable throughput, but would sacrifice the more precise flow balance offered by <xref target="RFC9332"/>. This option would be expected to result in some reordering of previously CE marked packets sent by Classic ECN senders, which is a trait shared with <xref target="RFC9332"/>. As is discussed in <xref target="RFC9331"/>, this reordering would be either zero risk or very low risk.</t>
-
-        <t>If classification based on the ECN field isn't possible in the bottleneck, this option may still be useful if an external system can be configured to reflect the ECN codepoint to another field that could then be used as an alternative identifier to classify traffic into Queue #1. For example, if at network ingress an edge router can apply a local-use DSCP to ECT(1) &amp; CE packets, the bottleneck can then utilize a DSCP classifier. Similarly, in MPLS networks, ECT(1) &amp; CE packets could use a different EXP value [RFC5129] than classic packets. More generally, any tunneling protocol can be used to proxy the ECN value of the encapsulated packet to its outer header, enabling bottlenecks to classify packets based on their input virtual interface.</t>
+      </section>
       </section>
 
       <section><name>Approximate Fair Dropping</name>
@@ -450,11 +427,21 @@ please see http://xml.resource.org/authoring/README.html. -->
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9330.xml"/>
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9331.xml"/>
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9332.xml"/>
+      <reference anchor="I-D.draft-deschepper-tsvwg-srm" xml:base="https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.deschepper-tsvwg-srm.xml" target="https://www.ietf.org/archive/id/draft-deschepper-tsvwg-srm-00.html">
+        <front>
+          <title>Static Rate Management (SRM) for Low Latency, Low Loss, and Scalable Throughput (L4S)</title>
+          <seriesInfo name="Internet-Draft" value="draft-deschepper-tsvwg-srm-00"/>
+          <author initials="K" surname="De Schepper" fullname="Koen De Schepper"/>
+          <author initials="M" surname="Vrana" fullname="Miroslav Vrana"/>
+          <date month="July" day="6" year="2026"/>
+        </front>
+      </reference>
     </references>
     <references><name>Informative References</name>
       <!-- Here we use entities that we defined at the beginning. -->
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8290.xml"/>
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.6040.xml"/>
+      <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.5129.xml"/>
       <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.5348.xml"/>
       <reference anchor="Ha" target="https://www.cs.princeton.edu/courses/archive/fall16/cos561/papers/Cubic08.pdf">
         <front>
